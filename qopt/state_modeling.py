@@ -10,7 +10,7 @@ Then we need to have an "insert mode" function.
 
 """
 
-from __future__ import division
+
 
 from numpy import pi, sqrt, exp, array, arange, zeros
 import scipy as sp
@@ -81,7 +81,7 @@ class Gaussian:
                                                cShape[0] % 2 == 0:
             self.covariance = sp.matrix(covariance)
         else:
-            raise ValueError, 'covariance must be 2M x 2M matrix or 2M array'
+            raise ValueError('covariance must be 2M x 2M matrix or 2M array')
                     
         self.numModes = cShape[0]//2
         
@@ -90,7 +90,7 @@ class Gaussian:
         elif len(disp) == 2*self.numModes:
             self.disp = sp.array(disp)
         else:
-            raise ValueError, 'disp must be array of same length as covariance'
+            raise ValueError('disp must be array of same length as covariance')
             
         self.nonemptymodes = [m for m in range(self.numModes) \
                 if m not in emptymodes]
@@ -113,8 +113,8 @@ class Gaussian:
             self.prefactor = 1.
             
         self.norm = self._norm()
-        self.photonnumbers = dict(zip(['noise','amplitude'], 
-                                      self._photonnumber()))
+        self.photonnumbers = dict(list(zip(['noise','amplitude'], 
+                                      self._photonnumber())))
                                 
     
     def __str__(self):
@@ -237,7 +237,7 @@ class Gaussian:
         
     def xHomodyne(self, mode, q):
         if len(self.nonemptymodes) < 2:
-            print "Not multimode state"
+            print("Not multimode state")
             return
         
         
@@ -498,7 +498,7 @@ def makeWig(G, APDs, HD, ret_G=False):
         tmp = []
         m_vacs = itertools.combinations(APDs, i)  # vacuum projection combinations
         for m_vac in m_vacs:
-            m_id = range(G.numModes)  # m_id is the modes with identity trace out
+            m_id = list(range(G.numModes))  # m_id is the modes with identity trace out
             m_id.remove(HD)
             for m in m_vac:
                 m_id.remove(m)
@@ -555,7 +555,7 @@ def makeWigOnOff(G, APD_on, APD_off, HD, ret_G=False):
         tmp = []
         m_vacs = itertools.combinations(APD_on, i)  # vacuum projection combinations
         for m_vac in m_vacs:
-            m_id = range(G.numModes)  # m_id is the modes with identity trace out
+            m_id = list(range(G.numModes))  # m_id is the modes with identity trace out
             m_id.remove(HD)
             for m in m_vac:
                 m_id.remove(m)
@@ -645,7 +645,7 @@ def rhoSingleModeGaussian(covariance, disp=[0,0], N=20):
     
     
 if __name__=='__main__':
-    import quantumoptics as qo
+    from . import quantumoptics as qo
     cov = [[.625,.375],[.375,.625]]
     disp = [.5,.5]
     N = 15
@@ -653,4 +653,4 @@ if __name__=='__main__':
     G = Gaussian(cov, disp)
     q1 = qo.QuantumState(rho)
     q2 = qo.QuantumStateW(G.wig_grid, [8,81], photons=N)
-    print(abs(rho-q2.rho).max())
+    print((abs(rho-q2.rho).max()))

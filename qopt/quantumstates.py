@@ -5,7 +5,7 @@ Created on Fri Apr 23 13:39:17 2010
 @author: Jonas
 """
 
-from __future__ import division
+
 import scipy as sp
 from scipy import pi, exp, log, sqrt, tan, sin, cos, \
         tanh, sinh, cosh, arccos, angle
@@ -455,7 +455,7 @@ def plotWig(*XPW, **kwargs):
     from mayavi import mlab
     defaultPlottype = 'mpl'    
     
-    if kwargs.has_key('plottype'):
+    if 'plottype' in kwargs:
         plottype = kwargs['plottype']
     else:
         plottype = defaultPlottype

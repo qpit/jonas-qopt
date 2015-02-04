@@ -9,7 +9,7 @@ ToDo:
 
 """
 
-from __future__ import print_function
+
 import scipy as sp
 import scipy.special as sps
 import scipy.optimize

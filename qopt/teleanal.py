@@ -13,12 +13,13 @@ import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from tomography import HomodyneTomogram
-from quantumoptics import QuantumState, CVQubitStateW, QuantumStateW
-from quantumstates import rho_coh, rho_cat, rho_coqu, coqu2cat, cat2coqu
-from tomography_plotting import wignerContour, quadratureTrace, countRate
-from state_modeling import imf0, buildG, makeWig, makeWigOnOff
+from .tomography import HomodyneTomogram
+from .quantumoptics import QuantumState, CVQubitStateW, QuantumStateW
+from .quantumstates import rho_coh, rho_cat, rho_coqu, coqu2cat, cat2coqu
+from .tomography_plotting import wignerContour, quadratureTrace, countRate
+from .state_modeling import imf0, buildG, makeWig, makeWigOnOff
 import qutip as qt
+from functools import reduce
 
 numeps = finfo(float).eps
 
@@ -63,7 +64,7 @@ class Tele:
     def __init__(self, setup_params={}):
         params = defaults.copy()
         params.update(setup_params)
-        for key, val in params.iteritems():
+        for key, val in params.items():
             setattr(self, key, val)
         
         
@@ -77,8 +78,8 @@ class Tele:
         Returns:
             sets self.settings as a dict
         """
-        sett = dict(zip(varnames.split(), settings.split()))
-        for key, val in sett.iteritems():
+        sett = dict(list(zip(varnames.split(), settings.split())))
+        for key, val in sett.items():
             try:
                 sett[key] = float(val)
             except ValueError:
@@ -348,7 +349,7 @@ def qutip_model(alpha, etaCAT, etaHD, etaAPD, RA, RB, RE, r, theta=None, phi=0,
              VBC(1-RB).dag() * VAC(1-RA).dag()
     
     poff = reduce(lambda x,y: x+y,
-                  map(lambda m: qt.fock_dm(N+1, m) * (1-etaAPD)**m, range(N+1)))
+                  [qt.fock_dm(N+1, m) * (1-etaAPD)**m for m in range(N+1)])
     proj = qt.tensor([I-poff, I, I])              
     
     rho_onsq = rhoABCsq
