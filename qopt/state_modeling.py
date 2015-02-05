@@ -568,14 +568,17 @@ def makeWigOnOff(G, APD_on, APD_off, HD, ret_G=False):
         num = denom = 0
         for k, Gk in enumerate(Gc):
             for Gj in Gk:
-                num += (-1)**k * Gj.wig(x,p)
+                num += (-1)**k * Gj.wig_grid(x,p)
                 denom += (-1)**k * Gj.norm
         return num/denom    
-                
-    wig = sp.vectorize(wig)        
+
+    # success probability
+    prob = sum([(-1)**k * sum([g.norm for g in gg]) for k,gg in enumerate(Gc)])
+
+    #wig = sp.vectorize(wig)        
 
     if ret_G:
-        return G, Gc, wig
+        return G, Gc, wig, prob
     else:
         return wig 
         
