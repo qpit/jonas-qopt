@@ -256,28 +256,30 @@ class HomodyneTomogram:
             rho0 = sp.identity(rho0+1)
         rho0 /= rho0.trace()
         
+        n_ph = len(self.phases_unique)
         photons = len(rho0)-1
         theta = self.thetaval.flatten()
         x = self.xval.flatten()
         x_max = abs(x).max()
 #        theta_edges = self.phases_unique + [self.phases_unique[-1]+1.]
         theta_edges = self.phases_unique + [360.]
-        x_edges = sp.linspace(-x_max, x_max, n_bins+1)
+        x_edges, dx = sp.linspace(-x_max, x_max, n_bins+1, retstep=True)
         hist, theta_edges, x_edges = sp.histogram2d(theta, x, 
                                         bins=[theta_edges, x_edges])
         self.hist = hist
         hist = hist.flatten() * n_bins / float(len(x))
+        self.maxent = sp.nan_to_num(hist/n_ph * sp.log(hist / float(len(x)))).sum()
         x_centers = (x_edges[1:] + x_edges[:-1])/2.
         
         phases_rad = 2*sp.pi/360. * sp.array(self.phases_unique)
         phase_grid = sp.tile(phases_rad[:,sp.newaxis], [1, n_bins])
-        x_grid = sp.tile(x_centers, [len(self.phases_unique), 1])
+        x_grid = sp.tile(x_centers, [n_ph, 1])
         
-        wavefuncs = sp.zeros([len(self.phases_unique), n_bins, photons + 1])+0j
+        wavefuncs = sp.zeros([n_ph, n_bins, photons + 1])+0j
         for n in sp.arange(photons + 1):
             # use xn().conj() to get <n|x> instead of <x|n>
             wavefuncs[:,:,n] = xn(phase_grid, x_grid, n).conj()
-        wavefuncs = wavefuncs.reshape((len(self.phases_unique) * n_bins,
+        wavefuncs = wavefuncs.reshape((n_ph * n_bins,
                                                  photons + 1))
         # wavefuncs has dimensions (n_phases * n_bins, photons+1)
         if eta < 1:
@@ -302,7 +304,7 @@ class HomodyneTomogram:
             rho_former = rho
             if eta == 1:
                 probabilities = sp.sum(sp.dot(wavefuncs.conj(), rho)*
-                        wavefuncs, axis=1)
+                        wavefuncs, axis=1).real * dx
                 #WRONG, for a long time: R = sp.dot(hist / self.probabilities * self.wavefuncs.T, self.wavefuncs.conj())
                 #changed back to original, but also changed probabilities and wavefuncs
                 R = sp.dot(hist / probabilities * wavefuncs.T, 
@@ -311,7 +313,7 @@ class HomodyneTomogram:
 #                probabilities = sp.einsum('hi,ij,hj->h', wavefuncs.conj(),
 #                                               rho, wavefuncs) 
 #                probabilities = sp.einsum('hij,ji', povm, rho)
-                probabilities = sp.tensordot(povm, rho, ([1,2], [1,0]))
+                probabilities = sp.tensordot(povm, rho, ([1,2], [1,0])) * dx
                 R = sp.tensordot(hist/probabilities, povm, 1)
             rho = sp.dot(R, sp.dot(rho, R))
 #           TRYING TO MAKE rho HERMITIAN
@@ -323,11 +325,16 @@ class HomodyneTomogram:
             except ValueError:
                 print('After',k)
                 
+            likelihood = ((probabilities/n_ph)**hist).prod()
+            print(k, sp.log(likelihood), 
+                  (probabilities/n_ph * sp.log(probabilities/n_ph)).sum() * len(x),
+                  self.maxent)
             elemdiff = abs(abs(rho)-abs(rho_former)).sum()
             tracedist = 0#la.svdvals(sp.asmatrix(rho) -
                           #         sp.asmatrix(rho_former)).sum()/2
-            self.monitor.append([elemdiff,tracedist])
+            self.monitor.append([rho_former,elemdiff,tracedist,likelihood,probabilities])
         self.rho = rho
+        self.wavefuncs = wavefuncs
         
     
     def report(self):
