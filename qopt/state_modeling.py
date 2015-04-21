@@ -70,7 +70,7 @@ class Gaussian:
     The vacuum covariance matrix has diagonal entries 0.5.
     """
     #def __init__(self, covariance, disp=None, modeNames=None, prefactor=None):
-    def __init__(self, covariance, disp=None, prefactor=None, emptymodes=[]):
+    def __init__(self, covariance, disp=[], prefactor=None, emptymodes=[]):
         
         self.emptymodes = emptymodes        
         
@@ -85,7 +85,7 @@ class Gaussian:
                     
         self.numModes = cShape[0]//2
         
-        if disp == None:
+        if not sp.any(disp):
             self.disp = sp.zeros(2*self.numModes)
         elif len(disp) == 2*self.numModes:
             self.disp = sp.array(disp)
