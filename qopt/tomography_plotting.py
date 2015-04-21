@@ -22,7 +22,7 @@ Created on Fri Apr 01 15:20:00 2011
 #    
 #    win.exec_()
 
-from __future__ import division
+
 import scipy as sp
 import matplotlib as mpl
 import matplotlib.pyplot as plt

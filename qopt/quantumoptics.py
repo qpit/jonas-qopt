@@ -10,7 +10,7 @@ ToDo:
 * Vectorize xn, wig_mn
 """
 
-from __future__ import division
+
 import numpy as np
 import scipy.linalg as la
 import scipy.special as sf
@@ -21,7 +21,7 @@ from scipy import asmatrix, asarray, finfo, zeros, mgrid, meshgrid, array, \
                   nonzero, outer, tile, rand, sum, arccos, arctan2, conj, \
                   mat, isfinite, ogrid, eye
 import scipy.optimize as optimize
-import quantumstates as qs
+import qopt.quantumstates as qs
 
 # ================
 #  misc functions
@@ -93,7 +93,7 @@ def makeGrid(xlim, nx, plim=None, np=None, return_res=False):
         elif len(xlim) == 2:
             xmin, xmax = xlim
         else:
-            raise ValueError, "xlim should be one or two elements long."
+            raise ValueError("xlim should be one or two elements long.")
     except TypeError:
         xmax = abs(xlim)
         xmin = -xmax    
@@ -106,7 +106,7 @@ def makeGrid(xlim, nx, plim=None, np=None, return_res=False):
             elif len(plim) == 2:
                 pmin, pmax = plim
             else:
-                raise ValueError, "plim should be one or two elements long."
+                raise ValueError("plim should be one or two elements long.")
         except TypeError:
             pmax = abs(plim)
             pmin = -pmax        
@@ -148,7 +148,7 @@ def makeGrid_alt(xlim, xres, plim=None, pres=None):
         elif len(xlim) == 2:
             xmin, xmax = xlim
         else:
-            raise ValueError, "xlim should be one or two elements long."
+            raise ValueError("xlim should be one or two elements long.")
     except TypeError:
         xmax = abs(xlim)
         xmin = -xmax
@@ -161,7 +161,7 @@ def makeGrid_alt(xlim, xres, plim=None, pres=None):
             elif len(plim) == 2:
                 pmin, pmax = plim
             else:
-                raise ValueError, "plim should be one or two elements long."
+                raise ValueError("plim should be one or two elements long.")
         except TypeError:
             pmax = abs(plim)
             pmin = -pmax        
@@ -357,7 +357,7 @@ class QuantumState:
         
         if self._sqrtrho.shape != sigma.shape:
             print("The two density matrices have unequal dimensions.")
-            print("Cropping down to %d photons" % (size - 1))
+            print(("Cropping down to %d photons" % (size - 1)))
             
 #        return real_if_close(la.sqrtm(sqrtrho * sigma * sqrtrho).trace())
         return real(la.sqrtm(self._sqrtrho[:size,:size] * sigma[:size,:size] *
@@ -589,14 +589,14 @@ def find_cat(s, alpha=None, printing=False):
             lambda atp: 1-s.cat_overlap(*atp), array([.5,pi/2,0]),  
             bounds=[a_bounds,(0,pi),(-pi,pi)], approx_grad=True, disp=0)
     if rc1 != 1 and printing:
-        print(optimize.tnc.RCSTRINGS[rc1])
+        print((optimize.tnc.RCSTRINGS[rc1]))
         
     if printing: print('Trying phi_ini=pi... ')
     best_cat2, nfeval2, rc2 = optimize.fmin_tnc(
             lambda atp: 1-s.cat_overlap(*atp), array([.5,pi/2,pi]),  
             bounds=[a_bounds,(0,pi),(0,2*pi)], approx_grad=True, disp=0)
     if rc2 != 1 and printing:
-        print(optimize.tnc.RCSTRINGS[rc2])
+        print((optimize.tnc.RCSTRINGS[rc2]))
     
     if s.cat_overlap(*best_cat1) > s.cat_overlap(*best_cat2):
         best_cat = best_cat1
@@ -604,9 +604,9 @@ def find_cat(s, alpha=None, printing=False):
         best_cat = best_cat2
 
     if printing:
-        print('Best fit with cat (alpha,theta,phi) = (%.3f, %.1f\xb0, %.1f\xb0)' %
-        (best_cat[0], best_cat[1]*180/pi, best_cat[2]*180/pi))
-        print('Fidelity =', s.cat_overlap(*best_cat))
+        print(('Best fit with cat (alpha,theta,phi) = (%.3f, %.1f\xb0, %.1f\xb0)' %
+        (best_cat[0], best_cat[1]*180/pi, best_cat[2]*180/pi)))
+        print(('Fidelity =', s.cat_overlap(*best_cat)))
         print('')
         
     return best_cat, s.cat_overlap(*best_cat)
@@ -663,7 +663,7 @@ def logmALT(A, disp=True):
             errest = la.misc.norm(la.expm(F)-A,1) / la.misc.norm(A,1)
     if disp:
         if not isfinite(errest) or errest >= errtol:
-            print "Result may be inaccurate, approximate err =", errest
+            print("Result may be inaccurate, approximate err =", errest)
         return F
     else:
         return F, errest
