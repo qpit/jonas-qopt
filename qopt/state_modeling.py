@@ -17,6 +17,7 @@ import scipy as sp
 import scipy.linalg as linalg
 import scipy.special as sf
 from scipy.misc import factorial
+from numpy.polynomial.hermite import hermvander2d
 import itertools
 
 pi2 = 2*sp.pi
@@ -623,14 +624,16 @@ def rhoSingleModeGaussian(covariance, disp=[0,0], N=20):
     Bbc_table = zeros((N+1,N+1), dtype=sp.complex128)
     
     for m in arange(N+1):
-        herm_table[m] = sf.hermite(m)(Cc / sqrt(2*Bb))[0]
         bin_table[m,:m+1] = array([sf.binom(m,k) for k in range(m+1)])
         Aa_table[m] = Aa**m
         Bb_table[m,:m+1] = array([(Bb/2)**((m-k)/2) for k in range(m+1)])
         
-    hermc_table = herm_table.conj()
     Bbc_table = Bb_table.conj()
-        
+
+    H = hermvander2d(Cc / sqrt(2*Bb), 
+                     Cc.conjugate() / sqrt(2*Bb.conjugate()), 
+                     [N, N])
+    H = H.reshape((N+1, N+1))
     
     for m in range(N+1):
         for n in range(m+1):
@@ -639,14 +642,15 @@ def rhoSingleModeGaussian(covariance, disp=[0,0], N=20):
             rho[m,n] = ( pi*Q0 / sqrt(fact(m) * fact(n)) *
                         fact(k) * bin_table[m,:len(k)] * bin_table[n,:len(k)] *
                         Aa_table[k] * Bb_table[m,:len(k)] * Bbc_table[n,:len(k)] *
-                        herm_table[m-k] * hermc_table[n-k] ).sum() 
+                        H[m-k, n-k]).sum()
             
+    
     return rho + rho.T.conj() - sp.diagflat(rho.diagonal())
     
     
 if __name__=='__main__':
-    from . import quantumoptics as qo
-    cov = [[.625,.375],[.375,.625]]
+    import quantumoptics as qo
+    cov = [[.825,.375],[.375,.825]]
     disp = [.5,.5]
     N = 15
     rho = rhoSingleModeGaussian(cov, disp, N)
