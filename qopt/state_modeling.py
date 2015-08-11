@@ -333,6 +333,34 @@ class Gaussian:
         return Gaussian(covariance, disp, self.prefactor, self.emptymodes)
         
         
+    def QND(self, chi, modes, quadangles=[0, 0]):
+        """
+        QND interaction.
+        
+        Parameters
+        ----------
+        chi : float
+            Interaction strength.
+        
+        modes : [int, int]
+            Indices of the interaction modes.
+        
+        quadangles : [float, float]
+            The quadratures of the interaction Hamiltonian.
+            0 for x, pi/2 for p.
+            
+        Returns
+        -------
+        g : Gaussian
+            Gaussian after interaction.
+        """
+        a, b = quadangles
+        Q = [[1, 0, -chi * sin(a) * cos(b), -chi * sin(a) * sin(b)],
+             [0, 1, chi * cos(a) * cos(b), chi * cos(a) * sin(b)],
+             [-chi * cos(a) * sin(b), -chi * sin(a) * sin(b), 1, 0],
+             [chi * cos(a) * cos(b), chi * sin(a) * cos(b), 0, 1]]
+        M = sp.diag(sp.ones(2*modes))
+        
 
 #####################################
 # OPO specific formulas             #
