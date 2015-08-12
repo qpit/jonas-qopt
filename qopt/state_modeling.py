@@ -12,7 +12,7 @@ Then we need to have an "insert mode" function.
 
 
 
-from numpy import pi, sqrt, exp, array, arange, zeros
+from numpy import pi, sqrt, exp, array, arange, zeros, sin, cos
 import scipy as sp
 import scipy.linalg as linalg
 import scipy.special as sf
@@ -343,7 +343,7 @@ class Gaussian:
             Interaction strength.
         
         modes : [int, int]
-            Indices of the interaction modes.
+            Indices of the two interacting modes.
         
         quadangles : [float, float]
             The quadratures of the interaction Hamiltonian.
@@ -355,11 +355,26 @@ class Gaussian:
             Gaussian after interaction.
         """
         a, b = quadangles
+        
+        # two-mode QND interaction matrix
         Q = [[1, 0, -chi * sin(a) * cos(b), -chi * sin(a) * sin(b)],
              [0, 1, chi * cos(a) * cos(b), chi * cos(a) * sin(b)],
              [-chi * cos(a) * sin(b), -chi * sin(a) * sin(b), 1, 0],
              [chi * cos(a) * cos(b), chi * sin(a) * cos(b), 0, 1]]
-        M = sp.diag(sp.ones(2*modes))
+        Q = sp.matrix(Q)
+             
+        # multi-mode matrix; identity for remaining modes
+        indices = sp.array([2 * modes[0], 2 * modes[0] + 1,
+                            2 * modes[1], 2 * modes[1] + 1])
+        M = sp.identity(2*self.numModes)
+        M[sp.ix_(indices, indices)] = Q
+        
+        covariance = chop(M * self.covariance * M.T)
+        disp = chop(sp.dot(sp.asarray(M), self.disp))
+        
+        return Gaussian(covariance, disp, self.prefactor, self.emptymodes)
+        
+        
         
 
 #####################################
