@@ -540,7 +540,8 @@ def makeWig(G, APDs, HD, ret_G=False):
         tmp = []
         m_vacs = itertools.combinations(APDs, i)  # vacuum projection combinations
         for m_vac in m_vacs:
-            m_id = list(range(G.numModes))  # m_id is the modes with identity trace out
+            # m_id = list(range(G.numModes))  # m_id is the modes with identity trace out
+            m_id = G.nonemptymodes.copy()
             m_id.remove(HD)
             for m in m_vac:
                 m_id.remove(m)
