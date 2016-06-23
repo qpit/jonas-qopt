@@ -281,7 +281,7 @@ class Gaussian:
 
     def xProj(self, mode, r, x):
         """
-        Project a mode onto vacuum - multiply with vacuum Wigner function
+        Project a mode onto x - multiply with squeezed Wigner function
         and trace over that mode.
         """
         cov_sqz = sp.zeros(2*self.numModes)
@@ -295,7 +295,7 @@ class Gaussian:
 
     def pProj(self, mode, r, p):
         """
-        Project a mode onto vacuum - multiply with vacuum Wigner function
+        Project a mode onto p - multiply with squeezed Wigner function
         and trace over that mode.
         """
         cov_sqz = sp.zeros(2*self.numModes)
@@ -305,6 +305,54 @@ class Gaussian:
         e_modes = [m for m in range(self.numModes) if m != mode]
         Gsqz = Gaussian(cov_sqz, disp, emptymodes=e_modes)
         return pi2 * (self * Gsqz).traceMode(mode)
+
+    def pProj2(self, mode, p):
+        """
+        Project a mode onto p - true projection from Gaussian formulas.
+
+        :param mode: Mode to be measured
+        :param p: Measured p-value
+        :return: Gaussian, probability of measurement
+        """
+        t_ind, t_grid = modes2indices([mode])   # indices of traced mode
+        i = self.nonemptymodes.index(mode)
+        r_ind, r_grid = modes2indices(self.nonemptymodes[:i] +
+                                      self.nonemptymodes[i+1:])
+
+        # if final mode, return scalar instead of new Gaussian
+        if len(r_ind) == 0:
+            return self.prefactor * pi2 / sp.sqrt(
+                                             linalg.det(self.wigCoeff[t_grid]))
+
+        B = self.covariance[t_grid]
+        A = self.covariance[r_grid]
+        C = self.covariance[sp.ix_(r_ind, t_ind)]
+        proj_mat = sp.diag((0, 1 / B[1,1]))
+
+        # prefactor = self.prefactor * pi2 / sp.sqrt(linalg.det(A.I))
+        covariance = self.covariance.copy()  # only using the shape
+        disp = self.disp.copy()
+
+        covariance[r_grid] = A - C * proj_mat * C.T
+        covariance[t_ind] = covariance[:, t_ind] = 0
+
+        disp[r_ind] = disp[r_ind] + C * B.I * (sp.array([0, p]) - disp[t_ind])[:, sp.newaxis]
+        disp[t_ind] = 0
+
+        # prefactor = self.prefactor * sp.exp(-1/2 * (self.disp[sp.newaxis,:] * self.wigCoeff * self.disp[:,sp.newaxis] -
+        #                                             disp[sp.newaxis,:] * self.wigCoeff * disp[:,sp.newaxis]))[0,0]
+
+        prefactor = (self.prefactor / (1/(pi2**len(self.nonemptymodes) * sp.sqrt(linalg.det(self.ne_covariance)))) *
+                     1/(pi2**(len(self.nonemptymodes) - 1) * sp.sqrt(linalg.det(covariance[r_grid]))))
+
+        prob = 1/sp.sqrt(pi2 * B[1,1]) * sp.exp(-(p - self.disp[2*mode + 1])**2 / (2*B[1,1]))
+
+        # print(prefactor, prob)
+
+        emptymodes = self.emptymodes + [mode]
+
+        return Gaussian(covariance, disp, prefactor, emptymodes), prop
+
 
 
     def rotate(self, *rot):
