@@ -336,7 +336,7 @@ class Gaussian:
         covariance[r_grid] = A - C * proj_mat * C.T
         covariance[t_ind] = covariance[:, t_ind] = 0
 
-        disp[r_ind] = disp[r_ind] + C * B.I * (sp.array([0, p]) - disp[t_ind])[:, sp.newaxis]
+        disp[r_ind] = disp[r_ind] + sp.squeeze(sp.asarray(C * B.I * (sp.array([0, p]) - disp[t_ind])[:, sp.newaxis]))
         disp[t_ind] = 0
 
         # prefactor = self.prefactor * sp.exp(-1/2 * (self.disp[sp.newaxis,:] * self.wigCoeff * self.disp[:,sp.newaxis] -
@@ -351,7 +351,7 @@ class Gaussian:
 
         emptymodes = self.emptymodes + [mode]
 
-        return Gaussian(covariance, disp, prefactor, emptymodes), prop
+        return Gaussian(covariance, disp, prefactor, emptymodes), prob
 
 
 
