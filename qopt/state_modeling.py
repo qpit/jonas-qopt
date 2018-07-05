@@ -306,6 +306,53 @@ class Gaussian:
         Gsqz = Gaussian(cov_sqz, disp, emptymodes=e_modes)
         return pi2 * (self * Gsqz).traceMode(mode)
 
+    def xProj2(self, mode, x):
+        """
+        Project a mode onto x - true projection from Gaussian formulas.
+
+        :param mode: Mode to be measured
+        :param x: Measured x-value
+        :return: Gaussian, probability of measurement
+        """
+        t_ind, t_grid = modes2indices([mode])  # indices of traced mode
+        i = self.nonemptymodes.index(mode)
+        r_ind, r_grid = modes2indices(self.nonemptymodes[:i] +
+                                      self.nonemptymodes[i + 1:])
+
+        # if final mode, return scalar instead of new Gaussian
+        if len(r_ind) == 0:
+            return self.prefactor * pi2 / sp.sqrt(
+                linalg.det(self.wigCoeff[t_grid]))
+
+        B = self.covariance[t_grid]
+        A = self.covariance[r_grid]
+        C = self.covariance[sp.ix_(r_ind, t_ind)]
+        proj_mat = sp.diag((1 / B[0, 0], 0))
+
+        # prefactor = self.prefactor * pi2 / sp.sqrt(linalg.det(A.I))
+        covariance = self.covariance.copy()  # only using the shape
+        disp = self.disp.copy()
+
+        covariance[r_grid] = A - C * proj_mat * C.T
+        covariance[t_ind] = covariance[:, t_ind] = 0
+
+        disp[r_ind] = disp[r_ind] + sp.squeeze(sp.asarray(C * B.I * (sp.array([x, 0]) - disp[t_ind])[:, sp.newaxis]))
+        disp[t_ind] = 0
+
+        # prefactor = self.prefactor * sp.exp(-1/2 * (self.disp[sp.newaxis,:] * self.wigCoeff * self.disp[:,sp.newaxis] -
+        #                                             disp[sp.newaxis,:] * self.wigCoeff * disp[:,sp.newaxis]))[0,0]
+
+        prefactor = (self.prefactor / (1 / (pi2 ** len(self.nonemptymodes) * sp.sqrt(linalg.det(self.ne_covariance)))) *
+                     1 / (pi2 ** (len(self.nonemptymodes) - 1) * sp.sqrt(linalg.det(covariance[r_grid]))))
+
+        prob = 1 / sp.sqrt(pi2 * B[0, 0]) * sp.exp(-(x - self.disp[2 * mode]) ** 2 / (2 * B[0, 0]))
+
+        # print(prefactor, prob)
+
+        emptymodes = self.emptymodes + [mode]
+
+        return Gaussian(covariance, disp, prefactor, emptymodes), prob
+
     def pProj2(self, mode, p):
         """
         Project a mode onto p - true projection from Gaussian formulas.
@@ -646,7 +693,7 @@ def makeWigOnOff(G, APD_on, APD_off, HD, ret_G=False):
         tmp = []
         m_vacs = itertools.combinations(APD_on, i)  # vacuum projection combinations
         for m_vac in m_vacs:
-            m_id = list(range(G.numModes))  # m_id is the modes with identity trace out
+            m_id = G.nonemptymodes.copy()  # m_id is the modes with identity trace out
             m_id.remove(HD)
             for m in m_vac:
                 m_id.remove(m)
