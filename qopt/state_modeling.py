@@ -157,7 +157,7 @@ class Gaussian:
         covariance[ne_grid] = K
 
         disp = self.disp.copy()
-        disp[ne_ind] = d
+        disp[ne_ind] = sp.ravel(d)
 
         return Gaussian(covariance, disp, prefactor, self.emptymodes)
 
