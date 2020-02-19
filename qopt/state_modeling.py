@@ -467,6 +467,31 @@ class Gaussian:
 
         return Gaussian(covariance, disp, self.prefactor, self.emptymodes)
 
+    def phaseshift(self, theta, mode):
+        """
+        Phase shift a single mode.
+
+        Parameters
+        ----------
+        theta : float
+            Rotation angle in the positive direction (counter-clockwise).
+
+        mode : int
+            Mode index.
+        """
+        R = sp.matrix([[sp.cos(theta), -sp.sin(theta)], 
+                      [sp.sin(theta), sp.cos(theta)]])
+
+        # multi-mode matrix; identity for remaining modes
+        indices = sp.array([2 * mode, 2 * mode + 1])
+        M = sp.identity(2*self.numModes)
+        M[sp.ix_(indices, indices)] = R
+
+        covariance = M * self.covariance * M.T
+        disp = chop(sp.dot(sp.asarray(M), self.disp))
+
+        return Gaussian(covariance, disp, self.prefactor, self.emptymodes)
+
 
 
 
