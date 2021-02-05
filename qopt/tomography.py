@@ -21,7 +21,7 @@ import os
 import inspect
 import time
 
-from labutils import lecroy
+from . import lecroy
 
 pi2 = 2*sp.pi
 starttime = 0
