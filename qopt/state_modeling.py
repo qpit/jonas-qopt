@@ -11,6 +11,7 @@ Then we need to have an "insert mode" function.
 """
 
 from numpy import pi, sqrt, exp, array, arange, zeros, sin, cos
+
 import scipy as sp
 import scipy.linalg as linalg
 import scipy.special as sf
@@ -157,6 +158,7 @@ class Gaussian:
         covariance[ne_grid] = K
 
         disp = self.disp.copy()
+
         disp[ne_ind] = sp.ravel(d)
 
         return Gaussian(covariance, disp, prefactor, self.emptymodes)
