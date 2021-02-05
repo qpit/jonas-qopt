@@ -152,7 +152,7 @@ class HomodyneTomogram:
                       'C'+str(channel) in f])
     
     
-    def load_data(self):
+    def load_data(self, keep_raw=False):
         # Read all files and extract quadrature data
         traces = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fn] #map(HomodyneTrace, self.fn)
         tracesvac = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fnvac]        
@@ -203,6 +203,10 @@ class HomodyneTomogram:
         self.mfarray_norm = ( (self.mfarray - self.mfarray.mean()) *
             (self.segvars.mean(axis=0).max() - self.segvars.mean()) /
             (self.mfarray.max() - self.mfarray.mean()) + self.segvars.mean() )
+
+        if keep_raw:
+            self.traces = traces
+            self.tracesvac = tracesvac
     
     def setData(self, xval, phases_unique):
         """
@@ -269,7 +273,8 @@ class HomodyneTomogram:
                                         bins=[theta_edges, x_edges])
         self.hist = hist
         hist = hist.flatten() * n_bins / float(len(x))
-        self.maxent = sp.nan_to_num(hist/n_ph * sp.log(hist / float(len(x)))).sum()
+        # self.maxent = sp.nan_to_num(hist/n_ph * sp.log(hist / float(len(x)))).sum()
+        self.maxent = 0
         x_centers = (x_edges[1:] + x_edges[:-1])/2.
         
         phases_rad = 2*sp.pi/360. * sp.array(self.phases_unique)

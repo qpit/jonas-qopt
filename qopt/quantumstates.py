@@ -9,8 +9,7 @@ Created on Fri Apr 23 13:39:17 2010
 import scipy as sp
 from scipy import pi, exp, log, sqrt, tan, sin, cos, \
         tanh, sinh, cosh, arccos, angle
-import scipy
-factorial = scipy.math.factorial
+from scipy.special import factorial
 #from scipy import sp.sp.conj, real, imag, real_if_close
 #from scipy import arange, array, sum, sp.outer, mgrid, dot
 from scipy.special import laguerre, genlaguerre
