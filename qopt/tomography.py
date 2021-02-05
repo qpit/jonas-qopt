@@ -118,7 +118,7 @@ class HomodyneTrace:
         # the offset becuase it would include the unknown quantum state.
         # This method may not always work properly, so always keep it in mind!
         if self.offsetcorr == 'tail':       
-            offset = self.data[:, self.points*0.7:].mean()
+            offset = self.data[:, int(self.points*0.7):].mean()
         else:
             offset = 0
             
