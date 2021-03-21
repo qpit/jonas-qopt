@@ -9,7 +9,7 @@ multiplication etc. of states with same number of modes.
 Then we need to have an "insert mode" function.
 
 """
-
+import numpy as np
 from numpy import pi, sqrt, exp, array, arange, zeros, sin, cos
 
 import scipy as sp
@@ -57,9 +57,10 @@ def modes2indices(modes, retgrid=True):
     If retgrid==True, returns (indices, grid) where grid can be used for matrix
     indexing.
     """
-    indices = sp.array([[2*m, 2*m+1]
-                       for m in modes], dtype=sp.integer).flatten()
-    grid = sp.ix_(indices, indices)
+    indices = np.array([[2*m, 2*m+1]
+                       for m in modes], dtype=np.integer).flatten()
+    if retgrid:
+        grid = np.ix_(indices, indices)
     return (indices, grid) if retgrid else indices
 
 
@@ -196,8 +197,9 @@ class Gaussian:
                 n_noise.append(None)
                 n_amplitude.append(None)
             else:
-                ind = modes2indices([m])[0]
-                n_noise.append((self.covariance.diagonal()[0, ind].sum() - 1)/2)
+                ind = modes2indices([m], retgrid=False)
+                n_noise.append((self.covariance[ind[0], ind[0]] + 
+                                self.covariance[ind[1], ind[1]] - 1)/2)
                 n_amplitude.append((self.disp[ind]**2).sum()/2)
 
         return n_noise, n_amplitude
