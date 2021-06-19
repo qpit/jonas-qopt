@@ -251,7 +251,7 @@ class HomodyneTomogram:
             return p1
         
     
-    def reconstruct(self, n_bins=200, n_iter=100, rho0=15, eta=1):
+    def reconstruct(self, n_bins=200, n_iter=100, rho0=15, eta=1, report=True):
         """
         for eta=1 sometimes randomly ends up with NaNs in R!
         use eta=.999999.. instead
@@ -332,9 +332,10 @@ class HomodyneTomogram:
                 print('After',k)
                 
             likelihood = ((probabilities/n_ph)**hist).prod()
-            print(k, sp.log(likelihood), 
-                  (probabilities/n_ph * sp.log(probabilities/n_ph)).sum() * len(x),
-                  self.maxent)
+            if report:
+	            print(k, sp.log(likelihood), 
+	                  (probabilities/n_ph * sp.log(probabilities/n_ph)).sum() * len(x),
+	                  self.maxent)
             elemdiff = abs(abs(rho)-abs(rho_former)).sum()
             tracedist = 0#la.svdvals(sp.asmatrix(rho) -
                           #         sp.asmatrix(rho_former)).sum()/2
