@@ -8,4 +8,9 @@ setup(name='qopt',
       author='Jonas S. Neergaard-Nielsen',
       author_email='j@neer.dk',
       packages=['qopt'],
+      install_requires=[
+            'numpy',
+            'scipy',
+            'matplotlib'
+      ]
      )
