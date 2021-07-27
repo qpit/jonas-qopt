@@ -21,18 +21,18 @@ import os
 import inspect
 import time
 
-from labutils import lecroy
+from . import lecroy
 
 pi2 = 2*sp.pi
 starttime = 0
 
 def tic():
     global starttime
-    starttime = time.clock()
+    starttime = time.perf_counter()
     return starttime
     
 def toc(printtime=True):
-    endtime = time.clock()
+    endtime = time.perf_counter()
     if printtime:
         print('%.2f' % (endtime - starttime), end='')
     return endtime, (endtime - starttime)
@@ -118,7 +118,7 @@ class HomodyneTrace:
         # the offset becuase it would include the unknown quantum state.
         # This method may not always work properly, so always keep it in mind!
         if self.offsetcorr == 'tail':       
-            offset = self.data[:, self.points*0.7:].mean()
+            offset = self.data[:, int(self.points*0.7):].mean()
         else:
             offset = 0
             
@@ -152,10 +152,14 @@ class HomodyneTomogram:
                       'C'+str(channel) in f])
     
     
-    def load_data(self, keep_raw=False):
+    def load_data(self, keep_raw=False, phases=None):
         # Read all files and extract quadrature data
         traces = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fn] #map(HomodyneTrace, self.fn)
         tracesvac = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fnvac]        
+        
+        if len(phases) == len(traces):
+            for p, tr in zip(phases, traces):
+                tr.phase = p
         
         traces.sort(key=lambda tr: tr.phase)
         if sp.all([tr.phase is not None for tr in tracesvac]):
@@ -251,7 +255,7 @@ class HomodyneTomogram:
             return p1
         
     
-    def reconstruct(self, n_bins=200, n_iter=100, rho0=15, eta=1):
+    def reconstruct(self, n_bins=200, n_iter=100, rho0=15, eta=1, report=True):
         """
         for eta=1 sometimes randomly ends up with NaNs in R!
         use eta=.999999.. instead
@@ -332,9 +336,10 @@ class HomodyneTomogram:
                 print('After',k)
                 
             likelihood = ((probabilities/n_ph)**hist).prod()
-            print(k, sp.log(likelihood), 
-                  (probabilities/n_ph * sp.log(probabilities/n_ph)).sum() * len(x),
-                  self.maxent)
+            if report:
+	            print(k, sp.log(likelihood), 
+	                  (probabilities/n_ph * sp.log(probabilities/n_ph)).sum() * len(x),
+	                  self.maxent)
             elemdiff = abs(abs(rho)-abs(rho_former)).sum()
             tracedist = 0#la.svdvals(sp.asmatrix(rho) -
                           #         sp.asmatrix(rho_former)).sum()/2
