@@ -28,11 +28,11 @@ starttime = 0
 
 def tic():
     global starttime
-    starttime = time.clock()
+    starttime = time.perf_counter()
     return starttime
     
 def toc(printtime=True):
-    endtime = time.clock()
+    endtime = time.perf_counter()
     if printtime:
         print('%.2f' % (endtime - starttime), end='')
     return endtime, (endtime - starttime)
@@ -152,10 +152,14 @@ class HomodyneTomogram:
                       'C'+str(channel) in f])
     
     
-    def load_data(self, keep_raw=False):
+    def load_data(self, keep_raw=False, phases=None):
         # Read all files and extract quadrature data
         traces = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fn] #map(HomodyneTrace, self.fn)
         tracesvac = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fnvac]        
+        
+        if len(phases) == len(traces):
+            for p, tr in zip(phases, traces):
+                tr.phase = p
         
         traces.sort(key=lambda tr: tr.phase)
         if sp.all([tr.phase is not None for tr in tracesvac]):
