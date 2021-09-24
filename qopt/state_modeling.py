@@ -9,6 +9,13 @@ multiplication etc. of states with same number of modes.
 Then we need to have an "insert mode" function.
 
 """
+
+""" TODO
+- [ ] add loss at arbitrary point (eta is applied before beamsplitters)
+- [ ] add displacement operation
+- [ ] add multimode Wigner function (at least for Gaussians)
+"""
+
 import numpy as np
 from numpy import pi, sqrt, exp, array, arange, zeros, sin, cos
 
