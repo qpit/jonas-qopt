@@ -94,7 +94,7 @@ def quadratureTrace(values, points=5000):
     plt.xlim(0, points)
     plt.ylim(-6,6)
     plt.xticks([])
-    trace = plt.plot(values.flatten()[::values.size/points], 'k.', 
+    trace = plt.plot(values.flatten()[::values.size//points], 'k.', 
                      alpha=1000./points)
 
     return trace
