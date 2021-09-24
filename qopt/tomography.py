@@ -145,10 +145,10 @@ class HomodyneTomogram:
                       channel=1):
         pathvac = pathvac or path
 
-        self.fn = sp.array([os.path.join(path, f) for f in os.listdir(path)
+        self.fn = sp.array([os.path.join(path, f) for f in sorted(os.listdir(path))
                    if fnfilter in f and 'C'+str(channel) in f])
         self.fnvac = sp.array([os.path.join(pathvac, f) for f in 
-                      os.listdir(pathvac) if fnfiltervac in f and
+                      sorted(os.listdir(pathvac)) if fnfiltervac in f and
                       'C'+str(channel) in f])
     
     
