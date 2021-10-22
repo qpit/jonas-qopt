@@ -157,9 +157,10 @@ class HomodyneTomogram:
         traces = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fn] #map(HomodyneTrace, self.fn)
         tracesvac = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fnvac]        
         
-        if len(phases) == len(traces):
-            for p, tr in zip(phases, traces):
-                tr.phase = p
+        if phases:
+            if len(phases) == len(traces):
+                for p, tr in zip(phases, traces):
+                    tr.phase = p
         
         traces.sort(key=lambda tr: tr.phase)
         if sp.all([tr.phase is not None for tr in tracesvac]):
