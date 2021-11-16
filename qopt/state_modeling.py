@@ -120,9 +120,9 @@ class Gaussian:
         else:
             self.prefactor = 1.
 
-        self.norm = self._norm()
-        self.photonnumbers = dict(list(zip(['noise','amplitude'],
-                                      self._photonnumber())))
+        # self.norm = self._norm()
+        # self.photonnumbers = dict(list(zip(['noise','amplitude'],
+        #                               self._photonnumber())))
 
 
     def __str__(self):
@@ -191,12 +191,12 @@ class Gaussian:
         return self.prefactor * sp.exp(-0.5 * vecdotVdotvec)
 
 
-    def _norm(self):
+    def norm(self):
         return ( self.prefactor * pi2**len(self.nonemptymodes) /
                  sp.sqrt(linalg.det(linalg.inv(self.ne_covariance))) )
 
 
-    def _photonnumber(self):
+    def photonnumber(self):
         n_noise = []
         n_amplitude = []
         for m in range(self.numModes):
@@ -686,11 +686,11 @@ def makeWig(G, APDs, HD, ret_G=False):
 #                former method:
 #                num += (-1)**k * Gj.wig(x,p)
                 num += (-1)**k * Gj.wig_grid(x,p)
-                denom += (-1)**k * Gj.norm
+                denom += (-1)**k * Gj.norm()
         return num/denom
 
     # success probability
-    prob = sum([(-1)**k * sum([g.norm for g in gg]) for k,gg in enumerate(Gc)])
+    prob = sum([(-1)**k * sum([g.norm() for g in gg]) for k,gg in enumerate(Gc)])
 
 #    vectorization was necessary with the former method:
 #    wig = sp.vectorize(wig)
@@ -743,11 +743,11 @@ def makeWigOnOff(G, APD_on, APD_off, HD, ret_G=False):
         for k, Gk in enumerate(Gc):
             for Gj in Gk:
                 num += (-1)**k * Gj.wig_grid(x,p)
-                denom += (-1)**k * Gj.norm
+                denom += (-1)**k * Gj.norm()
         return num/denom
 
     # success probability
-    prob = sum([(-1)**k * sum([g.norm for g in gg]) for k,gg in enumerate(Gc)])
+    prob = sum([(-1)**k * sum([g.norm() for g in gg]) for k,gg in enumerate(Gc)])
 
     #wig = sp.vectorize(wig)
 
