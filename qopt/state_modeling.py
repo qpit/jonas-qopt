@@ -21,13 +21,13 @@ from numpy import pi, sqrt, exp, array, arange, zeros, sin, cos
 
 import scipy as sp
 import scipy.linalg as linalg
-import scipy.special as sf
+from scipy.special import gamma, binom
 from numpy.polynomial.hermite import hermvander2d
 import itertools
 
 pi2 = 2*sp.pi
 numeps = sp.finfo(float).eps
-fact = lambda k: sf.gamma(k+1)
+fact = lambda k: gamma(k+1)
 
 
 def chop(a):
@@ -797,7 +797,7 @@ def rhoSingleModeGaussian(covariance, disp=[0,0], N=20):
     Bbc_table = zeros((N+1,N+1), dtype=sp.complex128)
 
     for m in arange(N+1):
-        bin_table[m,:m+1] = array([sf.binom(m,k) for k in range(m+1)])
+        bin_table[m,:m+1] = array([binom(m,k) for k in range(m+1)])
         Aa_table[m] = Aa**m
         Bb_table[m,:m+1] = array([(Bb/2)**((m-k)/2) for k in range(m+1)])
 
