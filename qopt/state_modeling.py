@@ -236,7 +236,7 @@ class Gaussian:
         covariance = self.covariance.copy() # only using the shape
         disp = self.disp.copy()
 
-        covariance[r_grid] = (U0 - V * W0.I * V.T).I
+        # covariance[r_grid] = (U0 - V * W0.I * V.T).I
         covariance[t_ind] = covariance[:, t_ind] = 0
 
         disp[t_ind] = 0
