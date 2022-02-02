@@ -9,7 +9,7 @@ ToDo:
 
 """
 
-
+import numpy as np
 import scipy as sp
 import scipy.special as sps
 import scipy.optimize
@@ -119,6 +119,8 @@ class HomodyneTrace:
         # This method may not always work properly, so always keep it in mind!
         if self.offsetcorr == 'tail':       
             offset = self.data[:, int(self.points*0.7):].mean()
+        elif self.offsetcorr == 'individual_tail':
+            offset = self.data[:, int(self.points*0.5):].mean(1)
         else:
             offset = 0
             
@@ -126,7 +128,10 @@ class HomodyneTrace:
         # First subtract the offset from the data, then multiply all segments
         # with mfarray, finally sum across each
 #        self.values = (self.mfarray * (self.data - offset)).sum(1)
-        self.values = sp.dot((self.data - offset), self.mfarray)
+        if self.offsetcorr == 'individual_tail':
+            self.values = sp.dot((self.data - offset[:,np.newaxis]), self.mfarray)
+        else:
+            self.values = sp.dot((self.data - offset), self.mfarray)
     
     
     

@@ -18,15 +18,15 @@ Then we need to have an "insert mode" function.
 
 import numpy as np
 from numpy import pi, sqrt, exp, array, arange, zeros, sin, cos
-
+from numpy.linalg import det, inv
 import scipy as sp
 import scipy.linalg as linalg
 from scipy.special import gamma, binom
 from numpy.polynomial.hermite import hermvander2d
 import itertools
 
-pi2 = 2*sp.pi
-numeps = sp.finfo(float).eps
+pi2 = 2*np.pi
+numeps = np.finfo(float).eps
 fact = lambda k: gamma(k+1)
 
 
@@ -34,7 +34,7 @@ def chop(a):
     """
     Chop an ndarray to maximum precision.
     """
-    return a.round(sp.finfo(float).precision)
+    return a.round(np.finfo(float).precision)
 
 
 def beamsplitter_matrix(theta, modes=2, splitmodes=[0,1]):
@@ -45,16 +45,16 @@ def beamsplitter_matrix(theta, modes=2, splitmodes=[0,1]):
     modes = 2 : number of dimensions
     splitmodes = [1,2] : which two modes to split
     """
-    splitmodes = sp.array(splitmodes)
-    bsm = sp.diag([1. for i in range(2*modes)])
-    bsm[sp.ix_(2 * splitmodes, 2 * splitmodes)] = [
-                                        [sp.cos(theta), sp.sin(theta)],
-                                        [-sp.sin(theta), sp.cos(theta)]]
-    bsm[sp.ix_(2 * splitmodes + 1, 2 * splitmodes + 1)] = [
-                                        [sp.cos(theta), sp.sin(theta)],
-                                        [-sp.sin(theta), sp.cos(theta)]]
+    splitmodes = np.array(splitmodes)
+    bsm = np.diag([1. for i in range(2*modes)])
+    bsm[np.ix_(2 * splitmodes, 2 * splitmodes)] = [
+                                        [np.cos(theta), np.sin(theta)],
+                                        [-np.sin(theta), np.cos(theta)]]
+    bsm[np.ix_(2 * splitmodes + 1, 2 * splitmodes + 1)] = [
+                                        [np.cos(theta), np.sin(theta)],
+                                        [-np.sin(theta), np.cos(theta)]]
 
-    return sp.matrix(bsm)
+    return np.array(bsm)
 
 
 def modes2indices(modes, retgrid=True):
@@ -64,8 +64,7 @@ def modes2indices(modes, retgrid=True):
     If retgrid==True, returns (indices, grid) where grid can be used for matrix
     indexing.
     """
-    indices = np.array([[2*m, 2*m+1]
-                       for m in modes], dtype=np.integer).flatten()
+    indices = np.array([[2*m, 2*m+1] for m in modes]).flatten()
     if retgrid:
         grid = np.ix_(indices, indices)
     return (indices, grid) if retgrid else indices
@@ -82,21 +81,21 @@ class Gaussian:
 
         self.emptymodes = emptymodes
 
-        cShape = sp.array(covariance).shape
+        cShape = np.array(covariance).shape
         if len(cShape) == 1 and cShape[0] % 2 == 0:
-            self.covariance = sp.matrix(sp.diag(covariance))
+            self.covariance = np.diag(covariance)
         elif len(cShape) == 2 and cShape[0] == cShape[1] and \
                                                cShape[0] % 2 == 0:
-            self.covariance = sp.matrix(covariance)
+            self.covariance = np.array(covariance)
         else:
             raise ValueError('covariance must be 2M x 2M matrix or 2M array')
 
         self.numModes = cShape[0]//2
 
-        if not sp.any(disp):
-            self.disp = sp.zeros(2*self.numModes)
+        if not np.any(disp):
+            self.disp = np.zeros(2*self.numModes)
         elif len(disp) == 2*self.numModes:
-            self.disp = sp.array(disp)
+            self.disp = np.array(disp)
         else:
             raise ValueError('disp must be array of same length as covariance')
 
@@ -107,16 +106,16 @@ class Gaussian:
         self.ne_covariance = self.covariance[ne_grid]
         self.ne_disp = self.disp[ne_ind]
 
-        self.wigCoeff = sp.matrix(sp.zeros([2*self.numModes, 2*self.numModes]))
-        self.wigCoeff[ne_grid] = self.ne_covariance.I
-        self.ne_wigCoeff = sp.array(self.ne_covariance.I)
+        self.wigCoeff = np.zeros([2*self.numModes, 2*self.numModes])
+        self.wigCoeff[ne_grid] = inv(self.ne_covariance)
+        self.ne_wigCoeff = self.wigCoeff[ne_grid] # np.array(inv(self.ne_covariance))
 
 
         if prefactor:
             self.prefactor = prefactor
         elif len(self.nonemptymodes) > 0:
             self.prefactor = 1/(pi2**len(self.nonemptymodes) *
-                                sp.sqrt(linalg.det(self.ne_covariance)))
+                                np.sqrt(det(self.ne_covariance)))
         else:
             self.prefactor = 1.
 
@@ -149,25 +148,25 @@ class Gaussian:
 
         V1 = self.wigCoeff[ne_grid]
         V2 = G2.wigCoeff[ne_grid]
-        d1 = sp.matrix(self.disp[ne_ind]).T
-        d2 = sp.matrix(G2.disp[ne_ind]).T
+        d1 = self.disp[ne_ind]
+        d2 = G2.disp[ne_ind]
 
-        K = (V1 + V2).I
-        d = K * (V1 * d1 + V2 * d2)
+        K = inv(V1 + V2)
+        d = K @ (V1 @ d1 + V2 @ d2)
 
         # Take note of the 1/2 in the exp here - I spent
         # 2-3 days trying to find that missing factor of 2!
         prefactor = float(self.prefactor * G2.prefactor *
-                     sp.exp(-1/2 * (d1.T * V1 * d1 +
-                                    d2.T * V2 * d2 -
-                                    d.T * (V1 + V2) * d)))
+                     np.exp(-1/2 * (d1 @ V1 @ d1 +
+                                    d2 @ V2 @ d2 -
+                                    d @ (V1 + V2) @ d)))
 
         covariance = self.covariance.copy()
         covariance[ne_grid] = K
 
         disp = self.disp.copy()
 
-        disp[ne_ind] = sp.ravel(d)
+        disp[ne_ind] = np.ravel(d)
 
         return Gaussian(covariance, disp, prefactor, self.emptymodes)
 
@@ -179,21 +178,20 @@ class Gaussian:
     def wig(self, *co):
         """Evaluates the Gaussian functional expression in coordinates co."""
         vec = co - self.ne_disp
-        return self.prefactor * sp.exp(-0.5 *
-                sp.dot(vec, sp.dot(self.ne_wigCoeff, vec)))
+        return self.prefactor * np.exp(-0.5 * vec @ self.ne_wigCoeff @ vec)
 
     def wig_grid(self, X, P):
         """Evaluates the Gaussian functional expression in grid coords X, Y."""
-        XP = sp.dstack((X,P))
+        XP = np.dstack((X,P))
         vec = XP - self.ne_disp
-        Vdotvec = sp.tensordot(self.ne_wigCoeff, vec, (1,2)).transpose((1,2,0))
-        vecdotVdotvec = sp.sum(vec * Vdotvec, axis=2)
-        return self.prefactor * sp.exp(-0.5 * vecdotVdotvec)
+        Vdotvec = np.tensordot(self.ne_wigCoeff, vec, (1,2)).transpose((1,2,0))
+        vecdotVdotvec = np.sum(vec * Vdotvec, axis=2)
+        return self.prefactor * np.exp(-0.5 * vecdotVdotvec)
 
 
     def norm(self):
         return ( self.prefactor * pi2**len(self.nonemptymodes) /
-                 sp.sqrt(linalg.det(linalg.inv(self.ne_covariance))) )
+                 np.sqrt(det(inv(self.ne_covariance))) )
 
 
     def photonnumber(self):
@@ -225,18 +223,22 @@ class Gaussian:
 
         # if final mode, return scalar instead of new Gaussian
         if len(r_ind) == 0:
-            return self.prefactor * pi2 / sp.sqrt(
-                                             linalg.det(self.wigCoeff[t_grid]))
+            return self.prefactor * pi2 / np.sqrt(
+                                             det(self.wigCoeff[t_grid]))
 
         W0 = self.wigCoeff[t_grid]
         U0 = self.wigCoeff[r_grid]
-        V  = self.wigCoeff[sp.ix_(r_ind, t_ind)]
+        V  = self.wigCoeff[np.ix_(r_ind, t_ind)]
 
-        prefactor = self.prefactor * pi2 / sp.sqrt(linalg.det(W0))
+        prefactor = self.prefactor * pi2 / np.sqrt(det(W0))
         covariance = self.covariance.copy() # only using the shape
         disp = self.disp.copy()
 
+<<<<<<< HEAD
         # covariance[r_grid] = (U0 - V * W0.I * V.T).I
+=======
+        covariance[r_grid] = inv(U0 - V @ inv(W0) @ V.T)
+>>>>>>> modernise2
         covariance[t_ind] = covariance[:, t_ind] = 0
 
         disp[t_ind] = 0
@@ -258,7 +260,7 @@ class Gaussian:
         scalar if initially single mode.
         modes: integer or list of integers
         """
-        modes = sp.array(modes, ndmin=1)
+        modes = np.array(modes, ndmin=1)
         Gtraced = self
         for m in modes:
             Gtraced = Gtraced._traceSingleMode(m)
@@ -283,7 +285,7 @@ class Gaussian:
         function and trace over that mode.
         modes: integer or list of integers
         """
-        modes = sp.array(modes, ndmin=1)
+        modes = np.array(modes, ndmin=1)
         Gproj = self
         for m in modes:
             Gproj = Gproj._vacProjSingleMode(m)
@@ -295,9 +297,9 @@ class Gaussian:
         Project a mode onto x - multiply with squeezed Wigner function
         and trace over that mode.
         """
-        cov_sqz = sp.zeros(2*self.numModes)
-        cov_sqz[2*mode:2*(mode+1)] = [0.5*sp.exp(-2*r), 0.5*sp.exp(2*r)]
-        disp = sp.zeros(2*self.numModes)
+        cov_sqz = np.zeros(2*self.numModes)
+        cov_sqz[2*mode:2*(mode+1)] = [0.5*np.exp(-2*r), 0.5*np.exp(2*r)]
+        disp = np.zeros(2*self.numModes)
         disp[2*mode] = x
         e_modes = [m for m in range(self.numModes) if m != mode]
         Gsqz = Gaussian(cov_sqz, disp, emptymodes=e_modes)
@@ -309,9 +311,9 @@ class Gaussian:
         Project a mode onto p - multiply with squeezed Wigner function
         and trace over that mode.
         """
-        cov_sqz = sp.zeros(2*self.numModes)
-        cov_sqz[2*mode:2*(mode+1)] = [0.5*sp.exp(2*r), 0.5*sp.exp(-2*r)]
-        disp = sp.zeros(2*self.numModes)
+        cov_sqz = np.zeros(2*self.numModes)
+        cov_sqz[2*mode:2*(mode+1)] = [0.5*np.exp(2*r), 0.5*np.exp(-2*r)]
+        disp = np.zeros(2*self.numModes)
         disp[2*mode+1] = p
         e_modes = [m for m in range(self.numModes) if m != mode]
         Gsqz = Gaussian(cov_sqz, disp, emptymodes=e_modes)
@@ -332,31 +334,31 @@ class Gaussian:
 
         # if final mode, return scalar instead of new Gaussian
         if len(r_ind) == 0:
-            return self.prefactor * pi2 / sp.sqrt(
-                linalg.det(self.wigCoeff[t_grid]))
+            return self.prefactor * pi2 / np.sqrt(
+                det(self.wigCoeff[t_grid]))
 
         B = self.covariance[t_grid]
         A = self.covariance[r_grid]
-        C = self.covariance[sp.ix_(r_ind, t_ind)]
-        proj_mat = sp.diag((1 / B[0, 0], 0))
+        C = self.covariance[np.ix_(r_ind, t_ind)]
+        proj_mat = np.diag((1 / B[0, 0], 0))
 
-        # prefactor = self.prefactor * pi2 / sp.sqrt(linalg.det(A.I))
+        # prefactor = self.prefactor * pi2 / np.sqrt(det(A.I))
         covariance = self.covariance.copy()  # only using the shape
         disp = self.disp.copy()
 
-        covariance[r_grid] = A - C * proj_mat * C.T
+        covariance[r_grid] = A - C @ proj_mat @ C.T
         covariance[t_ind] = covariance[:, t_ind] = 0
 
-        disp[r_ind] = disp[r_ind] + sp.squeeze(sp.asarray(C * B.I * (sp.array([x, 0]) - disp[t_ind])[:, sp.newaxis]))
+        disp[r_ind] = disp[r_ind] + np.squeeze(np.asarray(C @ inv(B) @ (np.array([x, 0]) - disp[t_ind])[:, np.newaxis]))
         disp[t_ind] = 0
 
         # prefactor = self.prefactor * sp.exp(-1/2 * (self.disp[sp.newaxis,:] * self.wigCoeff * self.disp[:,sp.newaxis] -
         #                                             disp[sp.newaxis,:] * self.wigCoeff * disp[:,sp.newaxis]))[0,0]
 
-        prefactor = (self.prefactor / (1 / (pi2 ** len(self.nonemptymodes) * sp.sqrt(linalg.det(self.ne_covariance)))) *
-                     1 / (pi2 ** (len(self.nonemptymodes) - 1) * sp.sqrt(linalg.det(covariance[r_grid]))))
+        prefactor = (self.prefactor / (1 / (pi2 ** len(self.nonemptymodes) * np.sqrt(det(self.ne_covariance)))) *
+                     1 / (pi2 ** (len(self.nonemptymodes) - 1) * np.sqrt(det(covariance[r_grid]))))
 
-        prob = 1 / sp.sqrt(pi2 * B[0, 0]) * sp.exp(-(x - self.disp[2 * mode]) ** 2 / (2 * B[0, 0]))
+        prob = 1 / np.sqrt(pi2 * B[0, 0]) * np.exp(-(x - self.disp[2 * mode]) ** 2 / (2 * B[0, 0]))
 
         # print(prefactor, prob)
 
@@ -379,31 +381,31 @@ class Gaussian:
 
         # if final mode, return scalar instead of new Gaussian
         if len(r_ind) == 0:
-            return self.prefactor * pi2 / sp.sqrt(
-                                             linalg.det(self.wigCoeff[t_grid]))
+            return self.prefactor * pi2 / np.sqrt(
+                                             det(self.wigCoeff[t_grid]))
 
         B = self.covariance[t_grid]
         A = self.covariance[r_grid]
-        C = self.covariance[sp.ix_(r_ind, t_ind)]
-        proj_mat = sp.diag((0, 1 / B[1,1]))
+        C = self.covariance[np.ix_(r_ind, t_ind)]
+        proj_mat = np.diag((0, 1 / B[1,1]))
 
-        # prefactor = self.prefactor * pi2 / sp.sqrt(linalg.det(A.I))
+        # prefactor = self.prefactor * pi2 / sp.sqrt(det(A.I))
         covariance = self.covariance.copy()  # only using the shape
         disp = self.disp.copy()
 
-        covariance[r_grid] = A - C * proj_mat * C.T
+        covariance[r_grid] = A - C @ proj_mat @ C.T
         covariance[t_ind] = covariance[:, t_ind] = 0
 
-        disp[r_ind] = disp[r_ind] + sp.squeeze(sp.asarray(C * B.I * (sp.array([0, p]) - disp[t_ind])[:, sp.newaxis]))
+        disp[r_ind] = disp[r_ind] + np.squeeze(np.asarray(C @ inv(B) @ (np.array([0, p]) - disp[t_ind])[:, np.newaxis]))
         disp[t_ind] = 0
 
         # prefactor = self.prefactor * sp.exp(-1/2 * (self.disp[sp.newaxis,:] * self.wigCoeff * self.disp[:,sp.newaxis] -
         #                                             disp[sp.newaxis,:] * self.wigCoeff * disp[:,sp.newaxis]))[0,0]
 
-        prefactor = (self.prefactor / (1/(pi2**len(self.nonemptymodes) * sp.sqrt(linalg.det(self.ne_covariance)))) *
-                     1/(pi2**(len(self.nonemptymodes) - 1) * sp.sqrt(linalg.det(covariance[r_grid]))))
+        prefactor = (self.prefactor / (1/(pi2**len(self.nonemptymodes) * np.sqrt(det(self.ne_covariance)))) *
+                     1/(pi2**(len(self.nonemptymodes) - 1) * np.sqrt(det(covariance[r_grid]))))
 
-        prob = 1/sp.sqrt(pi2 * B[1,1]) * sp.exp(-(p - self.disp[2*mode + 1])**2 / (2*B[1,1]))
+        prob = 1/np.sqrt(pi2 * B[1,1]) * np.exp(-(p - self.disp[2*mode + 1])**2 / (2*B[1,1]))
 
         # print(prefactor, prob)
 
@@ -423,16 +425,16 @@ class Gaussian:
         """
         rot = list(rot)
         rot.reverse()
-        bigbsm = sp.identity(2*self.numModes)
+        bigbsm = np.identity(2*self.numModes)
 
         while rot:
             angle = rot.pop()
             modes  = rot.pop()
             bsm = beamsplitter_matrix(angle, self.numModes, modes)
-            bigbsm = sp.dot(bsm, bigbsm)
+            bigbsm = bsm @ bigbsm
 
-        covariance = chop(bigbsm * self.covariance * bigbsm.I)
-        disp = chop(sp.dot(sp.asarray(bigbsm), self.disp))
+        covariance = chop(bigbsm @ self.covariance @ inv(bigbsm))
+        disp = chop(bigbsm @ self.disp)
 
         return Gaussian(covariance, disp, self.prefactor, self.emptymodes)
 
@@ -465,16 +467,16 @@ class Gaussian:
              [0, 1, chi * cos(a) * cos(b), chi * cos(a) * sin(b)],
              [-chi * cos(a) * sin(b), -chi * sin(a) * sin(b), 1, 0],
              [chi * cos(a) * cos(b), chi * sin(a) * cos(b), 0, 1]]
-        Q = sp.matrix(Q)
+        Q = np.array(Q)
 
         # multi-mode matrix; identity for remaining modes
-        indices = sp.array([2 * modes[0], 2 * modes[0] + 1,
+        indices = np.array([2 * modes[0], 2 * modes[0] + 1,
                             2 * modes[1], 2 * modes[1] + 1])
-        M = sp.identity(2*self.numModes)
-        M[sp.ix_(indices, indices)] = Q
+        M = np.identity(2*self.numModes)
+        M[np.ix_(indices, indices)] = Q
 
-        covariance = chop(M * self.covariance * M.T)
-        disp = chop(sp.dot(sp.asarray(M), self.disp))
+        covariance = chop(M @ self.covariance @ M.T)
+        disp = chop(M @ self.disp)
 
         return Gaussian(covariance, disp, self.prefactor, self.emptymodes)
 
@@ -490,16 +492,16 @@ class Gaussian:
         mode : int
             Mode index.
         """
-        R = sp.matrix([[sp.cos(theta), -sp.sin(theta)], 
-                      [sp.sin(theta), sp.cos(theta)]])
+        R = np.array([[np.cos(theta), -np.sin(theta)], 
+                      [np.sin(theta), np.cos(theta)]])
 
         # multi-mode matrix; identity for remaining modes
-        indices = sp.array([2 * mode, 2 * mode + 1])
-        M = sp.identity(2*self.numModes)
-        M[sp.ix_(indices, indices)] = R
+        indices = np.array([2 * mode, 2 * mode + 1])
+        M = np.identity(2*self.numModes)
+        M[np.ix_(indices, indices)] = R
 
-        covariance = M * self.covariance * M.T
-        disp = chop(sp.dot(sp.asarray(M), self.disp))
+        covariance = M @ self.covariance @ M.T
+        disp = chop(M @ self.disp)
 
         return Gaussian(covariance, disp, self.prefactor, self.emptymodes)
 
@@ -512,15 +514,15 @@ class Gaussian:
 
 
 # OPO correlations
-XX = lambda eps, t: eps/(1-eps) * sp.exp(-(1-eps)*abs(t))
-PP = lambda eps, t: -eps/(1+eps) * sp.exp(-(1+eps)*abs(t))
+XX = lambda eps, t: eps/(1-eps) * np.exp(-(1-eps)*abs(t))
+PP = lambda eps, t: -eps/(1+eps) * np.exp(-(1+eps)*abs(t))
 
 ## mode functions
 # mf0: kappa-filtered double-sided exponential with gamma=1
-mf0 = lambda kap, t: sp.sqrt(kap * (1+kap) / (1+kap-4*kap**2+kap**3+kap**4)) * \
-        (kap * sp.exp(-abs(t)) - sp.exp(-kap*abs(t)))
+mf0 = lambda kap, t: np.sqrt(kap * (1+kap) / (1+kap-4*kap**2+kap**3+kap**4)) * \
+        (kap * np.exp(-abs(t)) - np.exp(-kap*abs(t)))
 # mf1: kappa-filtered step function
-mf1 = lambda kap, t: sp.sqrt(2*kap) * sp.exp(kap*t) * (1+sp.sign(-t))/2.
+mf1 = lambda kap, t: np.sqrt(2*kap) * np.exp(kap*t) * (1+np.sign(-t))/2.
 
 
 # analytically calculated expressions for filtered correlations
@@ -529,16 +531,16 @@ XX00 = lambda eps, kap: \
                   (3-eps) * ((5-2*eps) * kap**3 + kap**4))) /   \
         ((1-eps) * (2-eps)**2 * (1-eps+kap)**2 * (1+kap*(3+kap)))
 XX01 = lambda eps, kap: \
-        (sp.sqrt(2)*eps * (2 - 3*eps + eps**2 + 2*kap*(2-eps)**2 +
-                           4*kap**2*(2-eps) + 2*kap**3) * sp.sign(-1+kap)) /   \
-        ((1-eps) * (2-eps) * (1-eps+kap)**2 * sp.sqrt(1+4*(kap+kap**2)+kap**3))
+        (np.sqrt(2)*eps * (2 - 3*eps + eps**2 + 2*kap*(2-eps)**2 +
+                           4*kap**2*(2-eps) + 2*kap**3) * np.sign(-1+kap)) /   \
+        ((1-eps) * (2-eps) * (1-eps+kap)**2 * np.sqrt(1+4*(kap+kap**2)+kap**3))
 XX11 = lambda eps, kap: 2*eps / ((1-eps) * (1-eps+kap))
 
 # analytically calculated expressions for integrated mode functions,
 # relevant for filtering of displacement with a narrow-band cw field
-imf0 = lambda kap: (2 * (1+kap)**(3/2) * sp.sign(kap-1)) /   \
-                   sp.sqrt(kap * (1 + 3*kap + kap**2))
-imf1 = lambda kap: sp.sqrt(2/kap)
+imf0 = lambda kap: (2 * (1+kap)**(3/2) * np.sign(kap-1)) /   \
+                   np.sqrt(kap * (1 + 3*kap + kap**2))
+imf1 = lambda kap: np.sqrt(2/kap)
 
 
 def buildG_singlemode(r=[.3,0], eta=[1,1], beamsplitters=[(1,0,1)], disp=None):
@@ -549,20 +551,20 @@ def buildG_singlemode(r=[.3,0], eta=[1,1], beamsplitters=[(1,0,1)], disp=None):
 
     rotlist = []
     for bs in beamsplitters:
-        rotlist.append(sp.arccos(sp.sqrt(bs[0])))
+        rotlist.append(np.arccos(np.sqrt(bs[0])))
         rotlist.append(bs[1:])
 
-    Mvac = sp.diag(0.5 * sp.ones(2*numModes))
-    Meta = sp.diag(sp.array(sp.sqrt(eta)).repeat(2))
+    Mvac = np.diag(0.5 * np.ones(2*numModes))
+    Meta = np.diag(np.array(np.sqrt(eta)).repeat(2))
 
     # Get rotated disp vector
     disp = Gaussian(Mvac, disp).rotate(*rotlist).disp
-    disp = sp.dot(Meta, disp)
+    disp = Meta @ disp
 
-    r = sp.array(r)
-    eta = sp.array(eta)
-    M = 0.5 * sp.diag(sp.array([(1-eta) + eta * sp.exp(2*r),
-                                (1-eta) + eta * sp.exp(-2*r)]).T.flatten())
+    r = np.array(r)
+    eta = np.array(eta)
+    M = 0.5 * np.diag(np.array([(1-eta) + eta * np.exp(2*r),
+                                (1-eta) + eta * np.exp(-2*r)]).T.flatten())
     M = Gaussian(M).rotate(*rotlist).covariance
 
     return Gaussian(M, disp)
@@ -585,19 +587,19 @@ def buildG(eps=[.3, 0], kap=5, eta=[1, 1], beamsplitters=[(1, 0, 1)],
 
     rotlist = []
     for bs in beamsplitters:
-        rotlist.append(sp.arccos(sp.sqrt(bs[0])))
+        rotlist.append(np.arccos(np.sqrt(bs[0])))
         rotlist.append(bs[1:])
 
-    Mvac = sp.diag(0.5 * sp.ones(2*numModes))
-    Meta = sp.diag(sp.array(sp.sqrt(eta)).repeat(2))
+    Mvac = np.diag(0.5 * np.ones(2*numModes))
+    Meta = np.diag(np.array(np.sqrt(eta)).repeat(2))
 
     # Get rotated, filtered disp vector
     disp = Gaussian(Mvac, disp).rotate(*rotlist).disp
     imf = [imf0(kap), imf1(kap)]
-    dispFilter = sp.zeros(2*numModes)
+    dispFilter = np.zeros(2*numModes)
     for i in range(numModes):
         dispFilter[2*i:2*(i+1)] = imf[modetypes[i]]
-    disp = sp.dot(Meta, disp) * dispFilter
+    disp = Meta @ disp * dispFilter
 
     # mode distribution (beamsplitting) matrix
     # - index 1 where squeezed, otherwise 0. Take advantage of the rotation
@@ -608,7 +610,7 @@ def buildG(eps=[.3, 0], kap=5, eta=[1, 1], beamsplitters=[(1, 0, 1)],
     for m,e in enumerate(eps):
         # distribution matrix
         distributionDiag = [1 if i//2==m else 0 for i in range(2*numModes)]
-        rotState = Gaussian(sp.diag(distributionDiag) + Mvac).rotate(*rotlist)
+        rotState = Gaussian(np.diag(distributionDiag) + Mvac).rotate(*rotlist)
         Mrot = rotState.covariance - Mvac
 
         # correlation matrix
@@ -617,19 +619,19 @@ def buildG(eps=[.3, 0], kap=5, eta=[1, 1], beamsplitters=[(1, 0, 1)],
         pcorr = [[XX00(-e, kap), XX01(-e, kap)],
                  [XX01(-e, kap), XX11(-e, kap)]]
 
-        M = sp.zeros((2*numModes, 2*numModes))
+        M = np.zeros((2*numModes, 2*numModes))
         for i in range(numModes):
             for j in range(numModes):
                 M[2*i, 2*j] = xcorr[modetypes[i]][modetypes[j]]
                 M[2*i+1, 2*j+1] = pcorr[modetypes[i]][modetypes[j]]
 
-        M = sp.dot(Meta, sp.dot(M, Meta))
+        M = Meta @ M @ Meta
 
-        Mcorr.append(sp.asarray(Mrot) * M)
+        Mcorr.append(np.asarray(Mrot) * M)
 
     # create Gaussian state with the combined (distributed, filtered) correlation
     # matrix
-    return Gaussian(Mvac + sp.array(Mcorr).sum(axis=0), disp=disp)
+    return Gaussian(Mvac + np.array(Mcorr).sum(axis=0), disp=disp)
 
 
 
@@ -639,7 +641,7 @@ def buildVac(modelist=[0,1]):
     Make Gaussian vacuum state for the modes listed as 1 in modelist.
     E.g. buildVac([0,1,0]) -> Wid(x0,p0) Wvac(x1,p1) Wid(x2,p2)
     """
-    return Gaussian((0.5*sp.array(modelist)).repeat(2),
+    return Gaussian((0.5*np.array(modelist)).repeat(2),
             emptymodes = [m for m in range(len(modelist)) if modelist[m]==0])
 
 
@@ -765,8 +767,8 @@ def rhoSingleModeGaussian(covariance, disp=[0,0], N=20):
     Calculate density matrix (up to N photons) for the single-mode Gaussian
     state with given covariance matrix and displacement vector.
     """
-    covariance = sp.array(covariance)
-    disp = sp.array(disp)
+    covariance = np.array(covariance)
+    disp = np.array(disp)
     assert covariance.shape == (2,2)
     assert disp.shape == (2,)
 
@@ -787,14 +789,14 @@ def rhoSingleModeGaussian(covariance, disp=[0,0], N=20):
     Q0 = 1/(pi*sqrt(det)) * exp(-((1+A) * abs(C)**2 +
                                   (B*C.conj()**2 + B.conj()*C**2)/2) / det)
 
-    rho = sp.zeros((N+1,N+1), dtype=sp.complex128)
+    rho = np.zeros((N+1,N+1), dtype=np.complex128)
 
-    herm_table = zeros(N+1, dtype=sp.complex128)
-    hermc_table = zeros(N+1, dtype=sp.complex128)
+    herm_table = zeros(N+1, dtype=np.complex128)
+    hermc_table = zeros(N+1, dtype=np.complex128)
     bin_table = zeros((N+1,N+1))
     Aa_table = zeros(N+1)
-    Bb_table = zeros((N+1,N+1), dtype=sp.complex128)
-    Bbc_table = zeros((N+1,N+1), dtype=sp.complex128)
+    Bb_table = zeros((N+1,N+1), dtype=np.complex128)
+    Bbc_table = zeros((N+1,N+1), dtype=np.complex128)
 
     for m in arange(N+1):
         bin_table[m,:m+1] = array([binom(m,k) for k in range(m+1)])
@@ -810,7 +812,7 @@ def rhoSingleModeGaussian(covariance, disp=[0,0], N=20):
 
     for m in range(N+1):
         for n in range(m+1):
-            k = sp.arange(min(m,n)+1)
+            k = np.arange(min(m,n)+1)
 
             rho[m,n] = ( pi*Q0 / sqrt(fact(m) * fact(n)) *
                         fact(k) * bin_table[m,:len(k)] * bin_table[n,:len(k)] *
@@ -818,7 +820,7 @@ def rhoSingleModeGaussian(covariance, disp=[0,0], N=20):
                         H[m-k, n-k]).sum()
 
 
-    return rho + rho.T.conj() - sp.diagflat(rho.diagonal())
+    return rho + rho.T.conj() - np.diagflat(rho.diagonal())
 
 
 if __name__=='__main__':
