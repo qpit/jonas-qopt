@@ -68,8 +68,11 @@ lecroy_format = { 'descriptor_name':   [0, '16s'],  # 16-character string
                 }
                 
     
-def read(fn, readdata=True, scale=True):    
-    raw = open(fn, 'rb').read()
+def read(fn, readdata=True, scale=True, fn_is_raw_string=False):    
+    if fn_is_raw_string:
+        raw = fn
+    else:
+        raw = open(fn, 'rb').read()
     
     startpos = raw.find(b'WAVEDESC')
     
