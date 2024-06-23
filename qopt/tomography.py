@@ -59,7 +59,7 @@ class HomodyneTrace:
             
         self.metadata, self.trigtimes, self.data = lecroy.read(self.fn, scale=False)
         self.segments, self.points = self.data.shape
-        self.t = sp.arange(self.metadata['horiz_offset'], 
+        self.t = np.arange(self.metadata['horiz_offset'], 
                            self.metadata['horiz_offset'] + 
                                self.points*self.metadata['horiz_interval'], 
                            step = self.metadata['horiz_interval'])
@@ -75,12 +75,12 @@ class HomodyneTrace:
         
     def set_modefunc(self, type, *parameters):
         mfshapes = {'doubleexp': ( lambda gamma, t0, t: 
-                        sp.exp(-gamma*abs(t-t0)) ),
+                        np.exp(-gamma*abs(t-t0)) ),
                     'dblexpfilt': ( lambda gamma, kappa, t0, t:
-                        kappa*sp.exp(-gamma*abs(t-t0)) - 
-                            gamma*sp.exp(-kappa*abs(t-t0)) ),
+                        kappa*np.exp(-gamma*abs(t-t0)) - 
+                            gamma*np.exp(-kappa*abs(t-t0)) ),
                     'deltafilt': ( lambda kappa, t0, t:
-                        sp.exp(-kappa*abs(t-t0)) * (sp.sign(t0-t)+1)/2 )
+                        np.exp(-kappa*abs(t-t0)) * (np.sign(t0-t)+1)/2 )
                     }
         mfshape = mfshapes.get(type)
         
@@ -129,9 +129,9 @@ class HomodyneTrace:
         # with mfarray, finally sum across each
 #        self.values = (self.mfarray * (self.data - offset)).sum(1)
         if self.offsetcorr == 'individual_tail':
-            self.values = sp.dot((self.data - offset[:,np.newaxis]), self.mfarray)
+            self.values = np.dot((self.data - offset[:,np.newaxis]), self.mfarray)
         else:
-            self.values = sp.dot((self.data - offset), self.mfarray)
+            self.values = np.dot((self.data - offset), self.mfarray)
     
     
     
@@ -150,9 +150,9 @@ class HomodyneTomogram:
                       channel=1):
         pathvac = pathvac or path
 
-        self.fn = sp.array([os.path.join(path, f) for f in sorted(os.listdir(path))
+        self.fn = np.array([os.path.join(path, f) for f in sorted(os.listdir(path))
                    if fnfilter in f and 'C'+str(channel) in f])
-        self.fnvac = sp.array([os.path.join(pathvac, f) for f in 
+        self.fnvac = np.array([os.path.join(pathvac, f) for f in 
                       sorted(os.listdir(pathvac)) if fnfiltervac in f and
                       'C'+str(channel) in f])
     
@@ -162,13 +162,13 @@ class HomodyneTomogram:
         traces = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fn] #map(HomodyneTrace, self.fn)
         tracesvac = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fnvac]        
         
-        if phases:
+        if phases is not None:
             if len(phases) == len(traces):
                 for p, tr in zip(phases, traces):
                     tr.phase = p
         
         traces.sort(key=lambda tr: tr.phase)
-        if sp.all([tr.phase is not None for tr in tracesvac]):
+        if np.all([tr.phase is not None for tr in tracesvac]):
             tracesvac.sort(key=lambda tr: tr.phase)
         self.phases = [tr.phase for tr in traces]
         self.phases_unique = sorted(list(set(self.phases)))
@@ -185,14 +185,14 @@ class HomodyneTomogram:
         print(' read ' + str(len(traces)+len(tracesvac)) + ' files in ', end='')
         toc()
         print(' seconds.')
-        self.xval = sp.array([tr.values for tr in traces])
-        self.xvalvac = sp.array([tr.values for tr in tracesvac])
-        self.trigtimes = sp.array([tr.trigtimes[0] for tr in traces])
+        self.xval = np.array([tr.values for tr in traces])
+        self.xvalvac = np.array([tr.values for tr in tracesvac])
+        self.trigtimes = np.array([tr.trigtimes[0] for tr in traces])
         
         # Normalize traces to 0.5 vacuum variance
         vaclevel = self.xvalvac.var()
-        self.xval = self.xval / sp.sqrt(vaclevel * 2.)
-        self.xvalvac = self.xvalvac / sp.sqrt(vaclevel * 2.)
+        self.xval = self.xval / np.sqrt(vaclevel * 2.)
+        self.xvalvac = self.xvalvac / np.sqrt(vaclevel * 2.)
         
         if self.offsetcorr == 'totalmean':
             self.xval -= self.xval.mean()
@@ -204,11 +204,11 @@ class HomodyneTomogram:
         
         # Set phase array of same length as xval
         # - should be extended with other routines for scanned phase
-        self.thetaval = sp.outer(self.phases, sp.ones(len(self.xval[0])))
+        self.thetaval = np.outer(self.phases, np.ones(len(self.xval[0])))
         
         # Extract segment noise variances and mode function array
-        self.segvars = sp.array([tr.segvar for tr in traces])
-        self.segvarsvac = sp.array([tr.segvar for tr in tracesvac])
+        self.segvars = np.array([tr.segvar for tr in traces])
+        self.segvarsvac = np.array([tr.segvar for tr in tracesvac])
         self.mfarray = traces[0].mfarray
         self.mfarray_norm = ( (self.mfarray - self.mfarray.mean()) *
             (self.segvars.mean(axis=0).max() - self.segvars.mean()) /
@@ -226,7 +226,7 @@ class HomodyneTomogram:
         """
         self.xval = xval
         self.phases_unique = list(phases_unique)
-        self.thetaval = sp.outer(self.phases_unique, sp.ones(len(self.xval[0])))
+        self.thetaval = np.outer(self.phases_unique, np.ones(len(self.xval[0])))
         
     def segmentnoise(self):
         plt.figure(figsize=(7,10))
@@ -243,13 +243,13 @@ class HomodyneTomogram:
         
     
     def variancefit(self, p0=[1.,2.,0.,2.]):
-        fitfunc = lambda p, x: p[0]*sp.cos(2*sp.pi/360 * (x*2 - p[2])) + p[3]
+        fitfunc = lambda p, x: p[0]*np.cos(2*np.pi/360 * (x*2 - p[2])) + p[3]
         errfunc = lambda p, x, y: fitfunc(p,x) - y
         self.variances = self.xval.var(axis=1)
         p1, success = scipy.optimize.leastsq(errfunc, p0[:],
                                     args = (self.phases, self.variances))
         if success:
-            theta = sp.arange(0,181)
+            theta = np.arange(0,181)
             plt.figure()
             plt.plot(self.phases, self.variances, 'bo',
                      theta, fitfunc(p1, theta), 'b-')
@@ -268,7 +268,7 @@ class HomodyneTomogram:
         """
         self.monitor = []
         if type(rho0) == type(0):
-            rho0 = sp.identity(rho0+1)
+            rho0 = np.identity(rho0+1)
         rho0 /= rho0.trace()
         
         n_ph = len(self.phases_unique)
@@ -278,8 +278,8 @@ class HomodyneTomogram:
         x_max = abs(x).max()
 #        theta_edges = self.phases_unique + [self.phases_unique[-1]+1.]
         theta_edges = self.phases_unique + [360.]
-        x_edges, dx = sp.linspace(-x_max, x_max, n_bins+1, retstep=True)
-        hist, theta_edges, x_edges = sp.histogram2d(theta, x, 
+        x_edges, dx = np.linspace(-x_max, x_max, n_bins+1, retstep=True)
+        hist, theta_edges, x_edges = np.histogram2d(theta, x, 
                                         bins=[theta_edges, x_edges])
         self.hist = hist
         hist = hist.flatten() * n_bins / float(len(x))
@@ -287,12 +287,12 @@ class HomodyneTomogram:
         self.maxent = 0
         x_centers = (x_edges[1:] + x_edges[:-1])/2.
         
-        phases_rad = 2*sp.pi/360. * sp.array(self.phases_unique)
-        phase_grid = sp.tile(phases_rad[:,sp.newaxis], [1, n_bins])
-        x_grid = sp.tile(x_centers, [n_ph, 1])
+        phases_rad = 2*np.pi/360. * np.array(self.phases_unique)
+        phase_grid = np.tile(phases_rad[:,np.newaxis], [1, n_bins])
+        x_grid = np.tile(x_centers, [n_ph, 1])
         
-        wavefuncs = sp.zeros([n_ph, n_bins, photons + 1])+0j
-        for n in sp.arange(photons + 1):
+        wavefuncs = np.zeros([n_ph, n_bins, photons + 1])+0j
+        for n in np.arange(photons + 1):
             # use xn().conj() to get <n|x> instead of <x|n>
             wavefuncs[:,:,n] = xn(phase_grid, x_grid, n).conj()
         wavefuncs = wavefuncs.reshape((n_ph * n_bins,
@@ -301,14 +301,14 @@ class HomodyneTomogram:
         if eta < 1:
             global povm
 #            povm = sp.einsum('...i,...j', wavefuncs, wavefuncs.conj())
-            basepovm = sp.einsum('...i,...j', wavefuncs, wavefuncs.conj())
-            povm = sp.zeros(basepovm.shape, dtype='complex')
+            basepovm = np.einsum('...i,...j', wavefuncs, wavefuncs.conj())
+            povm = np.zeros(basepovm.shape, dtype='complex')
             for k in range(photons+1):
-                binomials = (lambda i,e: sp.sqrt(binom.pmf(i-k, i, e))) \
-                            (sp.arange(photons+1), eta)
-                shiftpovm = sp.zeros(basepovm.shape, dtype='complex')
+                binomials = (lambda i,e: np.sqrt(binom.pmf(i-k, i, e))) \
+                            (np.arange(photons+1), eta)
+                shiftpovm = np.zeros(basepovm.shape, dtype='complex')
                 shiftpovm[:,k:,k:] = basepovm[:,:-k,:-k] if k>0 else basepovm
-                shiftpovm *= sp.outer(binomials, binomials)
+                shiftpovm *= np.outer(binomials, binomials)
                 povm += shiftpovm
                 
             
@@ -319,33 +319,33 @@ class HomodyneTomogram:
             #                      * self.wavefuncs.conj()).sum(1)
             rho_former = rho
             if eta == 1:
-                probabilities = sp.sum(sp.dot(wavefuncs.conj(), rho)*
+                probabilities = np.sum(np.dot(wavefuncs.conj(), rho)*
                         wavefuncs, axis=1).real * dx
                 #WRONG, for a long time: R = sp.dot(hist / self.probabilities * self.wavefuncs.T, self.wavefuncs.conj())
                 #changed back to original, but also changed probabilities and wavefuncs
-                R = sp.dot(hist / probabilities * wavefuncs.T, 
+                R = np.dot(hist / probabilities * wavefuncs.T, 
                         wavefuncs.conj())
             else:
 #                probabilities = sp.einsum('hi,ij,hj->h', wavefuncs.conj(),
 #                                               rho, wavefuncs) 
 #                probabilities = sp.einsum('hij,ji', povm, rho)
-                probabilities = sp.tensordot(povm, rho, ([1,2], [1,0])) * dx
-                R = sp.tensordot(hist/probabilities, povm, 1)
-            rho = sp.dot(R, sp.dot(rho, R))
+                probabilities = np.tensordot(povm, rho, ([1,2], [1,0])) * dx
+                R = np.tensordot(hist/probabilities, povm, 1)
+            rho = np.dot(R, np.dot(rho, R))
 #           TRYING TO MAKE rho HERMITIAN
             
             rho = (rho + rho.T.conj())/2        
             rho /= rho.trace()
             try:
-                sp.asarray_chkfinite(rho)
+                np.asarray_chkfinite(rho)
             except ValueError:
                 print('After',k)
                 
             likelihood = ((probabilities/n_ph)**hist).prod()
             if report:
-	            print(k, sp.log(likelihood), 
-	                  (probabilities/n_ph * sp.log(probabilities/n_ph)).sum() * len(x),
-	                  self.maxent)
+                print(k, np.log(likelihood), 
+                      (probabilities/n_ph * np.log(probabilities/n_ph)).sum() * len(x),
+                      self.maxent)
             elemdiff = abs(abs(rho)-abs(rho_former)).sum()
             tracedist = 0#la.svdvals(sp.asmatrix(rho) -
                           #         sp.asmatrix(rho_former)).sum()/2
@@ -367,8 +367,8 @@ def xn(theta, x, n):
     """
     x-representation of Fock states, <x|n>
     """
-    return ( sp.exp(-1j * n * theta) * sps.hermite(n)(x) * sp.exp(-x*x/2.) /
-        sp.sqrt(sp.sqrt(sp.pi) * 2**n * sps.gamma(n+1)) )
+    return ( np.exp(-1j * n * theta) * sps.hermite(n)(x) * np.exp(-x*x/2.) /
+        np.sqrt(np.sqrt(np.pi) * 2**n * sps.gamma(n+1)) )
 
 
 

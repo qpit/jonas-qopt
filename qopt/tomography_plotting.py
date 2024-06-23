@@ -24,6 +24,7 @@ Created on Fri Apr 01 15:20:00 2011
 
 
 import scipy as sp
+import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -49,41 +50,41 @@ def wignerContour(XPW, type=1, colorbar=True):
         X,P,W = XPW
         
     if type==0:
-        im = plt.imshow(W.T, vmin=-1/sp.pi, vmax=1/sp.pi, 
+        im = plt.imshow(W.T, vmin=-1/np.pi, vmax=1/np.pi, 
                   extent=[X.min(), X.max(), P.min(), P.max()], origin='lower',
                   cmap = cmwig1)
         plt.colorbar()
-        cont = plt.contour(X, P, W, levels=sp.arange(-.32, .32, .04), 
+        cont = plt.contour(X, P, W, levels=np.arange(-.32, .32, .04), 
                    colors='k', alpha=.3, linewidths=0.5)
         return im, cont
     elif type==1:
         fig = plt.figure(figsize=(9,6), facecolor='w')
         ax = fig.add_axes([.05,.05,.9,.9], aspect='equal')
         dc = .02
-        cont = ax.contourf(X, P, W, sp.arange(-.33, .33+dc, dc), cmap=cmwig1);
+        cont = ax.contourf(X, P, W, np.arange(-.33, .33+dc, dc), cmap=cmwig1);
         if colorbar:
-            fig.colorbar(cont, ax=ax, ticks=sp.arange(-.3,.31,.1), 
+            fig.colorbar(cont, ax=ax, ticks=np.arange(-.3,.31,.1), 
                          shrink=.7, fraction=.08)
         ax.grid(True)
         return fig
     elif type==2:
         ax = plt.gca()
         dc = .02
-        cont = plt.contourf(X, P, W, sp.arange(-.33, .33+dc, dc), cmap=cmwig1);
+        cont = plt.contourf(X, P, W, np.arange(-.33, .33+dc, dc), cmap=cmwig1);
         if colorbar:
-            plt.colorbar(cont, ax=ax, ticks=sp.arange(-.3,.31,.1), 
+            plt.colorbar(cont, ax=ax, ticks=np.arange(-.3,.31,.1), 
                          shrink=.7, fraction=.08)
         plt.grid(True)
-        plt.xticks(sp.arange(sp.floor(X.min()+1), sp.ceil(X.max())))
-        plt.yticks(sp.arange(sp.floor(P.min()+1), sp.ceil(P.max())))
+        plt.xticks(np.arange(np.floor(X.min()+1), np.ceil(X.max())))
+        plt.yticks(np.arange(np.floor(P.min()+1), np.ceil(P.max())))
         return cont 
     elif type==3:
         fig = plt.figure(figsize=(9,6), facecolor='w')
         ax = fig.add_axes([.05,.05,.9,.9], aspect='equal')
         dc = .02
-        cont = ax.contourf(X, P, W, sp.arange(-.33, .33+dc, dc), cmap=cmwig1);
+        cont = ax.contourf(X, P, W, np.arange(-.33, .33+dc, dc), cmap=cmwig1);
         if colorbar:
-            fig.colorbar(cont, ax=ax, ticks=sp.arange(-.3,.31,.1), 
+            fig.colorbar(cont, ax=ax, ticks=np.arange(-.3,.31,.1), 
                          shrink=.7, fraction=.08)
         ax.grid(True)
         return fig
@@ -101,7 +102,7 @@ def quadratureTrace(values, points=5000):
     
     
 def numberDist(rho):
-    numdist = plt.bar(sp.arange(rho.shape[0])-.4, rho.diagonal().real,
+    numdist = plt.bar(np.arange(rho.shape[0])-.4, rho.diagonal().real,
                       color='#CCCCDD');
     plt.gca().set_xlim(-.5, rho.shape[0]-.5)
     return numdist
@@ -109,7 +110,7 @@ def numberDist(rho):
     
 def countRate(ht, bins=100, doplot=False):
 #    def trigtimes2CountRate(trigtimes, bins=100):
-#        bintimes = sp.linspace(0, trigtimes[-1], num=bins+1, endpoint=True)
+#        bintimes = np.linspace(0, trigtimes[-1], num=bins+1, endpoint=True)
 #        binpoints = trigtimes.searchsorted(bintimes)
 #        bincounts = binpoints[1:] - binpoints[:-1]
 #        binintervals = trigtimes[binpoints[1:]] - trigtimes[binpoints[:-1]]
@@ -118,7 +119,7 @@ def countRate(ht, bins=100, doplot=False):
     countRates = []
     binTimes = []        
     for tt in ht.trigtimes:
-        bintimes = sp.linspace(0, tt[-1], num=bins+1, endpoint=True)
+        bintimes = np.linspace(0, tt[-1], num=bins+1, endpoint=True)
         binpoints = tt.searchsorted(bintimes)
         bincounts = binpoints[1:] - binpoints[:-1]
         binintervals = tt[binpoints[1:]] - tt[binpoints[:-1]]
@@ -126,11 +127,11 @@ def countRate(ht, bins=100, doplot=False):
         binTimes.append(bintimes[:-1])
         countRates.append(countrates)
         
-    binTimes = sp.array(binTimes)
-    countRates = sp.array(countRates)
+    binTimes = np.array(binTimes)
+    countRates = np.array(countRates)
         
     
-    #    countRates = sp.array([trigtimes2CountRate[tt] for tt in ht.trigtimes])
+    #    countRates = np.array([trigtimes2CountRate[tt] for tt in ht.trigtimes])
     startTimes = [meta['trigger_time'] for meta in ht.metadata[:len(binTimes)]]
     startTimes = [st[3]*3600 + st[4]*60 + st[5] for st in startTimes]
     startTimes = [st - startTimes[0] for st in startTimes]
