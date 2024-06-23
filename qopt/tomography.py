@@ -23,7 +23,7 @@ import time
 
 from . import lecroy
 
-pi2 = 2*sp.pi
+pi2 = 2*np.pi
 starttime = 0
 
 def tic():

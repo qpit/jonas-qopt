@@ -15,11 +15,12 @@ import numpy as np
 import scipy.linalg as la
 import scipy.special as sf
 import scipy.stats as stats
-from scipy import pi, exp, log, sqrt, angle
-from scipy import asmatrix, asarray, finfo, zeros, mgrid, meshgrid, array, \
+from numpy import pi, exp, log, sqrt, angle
+from numpy import asmatrix, asarray, finfo, zeros, mgrid, meshgrid, array, \
                   arange, linspace, real, imag, real_if_close, dot, tensordot, \
-                  nonzero, outer, tile, rand, sum, arccos, arctan2, conj, \
+                  nonzero, outer, tile, sum, arccos, arctan2, conj, \
                   mat, isfinite, ogrid, eye
+from numpy.random import rand
 import scipy.optimize as optimize
 import qopt.quantumstates as qs
 
