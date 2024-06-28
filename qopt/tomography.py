@@ -90,7 +90,7 @@ class HomodyneTrace:
                 print(mf)
             return
         
-        mfargs = inspect.getargspec(mfshape)[0]
+        mfargs = inspect.getfullargspec(mfshape)[0]
         if len(parameters) != len(mfargs)-1:
             print('The', type, 'function requires', str(len(mfargs)-1), 
                   'parameters:')
