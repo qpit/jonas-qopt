@@ -7,7 +7,7 @@ Created on Fri Apr 23 13:39:17 2010
 
 
 import scipy as sp
-from scipy import pi, exp, log, sqrt, tan, sin, cos, \
+from numpy import pi, exp, log, sqrt, tan, sin, cos, \
         tanh, sinh, cosh, arccos, angle
 from scipy.special import factorial
 #from scipy import sp.sp.conj, real, imag, real_if_close
