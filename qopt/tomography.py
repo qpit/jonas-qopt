@@ -157,7 +157,7 @@ class HomodyneTomogram:
                       'C'+str(channel) in f])
     
     
-    def load_data(self, keep_raw=False, phases=None):
+    def load_data(self, keep_raw=False, phases=None, report=True):
         # Read all files and extract quadrature data
         traces = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fn] #map(HomodyneTrace, self.fn)
         tracesvac = [HomodyneTrace(f, offsetcorr=self.offsetcorr) for f in self.fnvac]        
@@ -175,16 +175,19 @@ class HomodyneTomogram:
         self.phasesvac = [tr.phase for tr in tracesvac]
         
         self.metadata = []
-        tic()
+        # tic()
         for trace in traces + tracesvac:
             trace.read_lecroy(report=False)
             trace.set_modefunc(self.mftype, *self.mfparameters)
             trace.temporal_filter()
             self.metadata.append(trace.metadata)
-            print('.', end='')
-        print(' read ' + str(len(traces)+len(tracesvac)) + ' files in ', end='')
-        toc()
-        print(' seconds.')
+            if report:
+                print('.', end='')
+        if report:
+            print(' read ' + str(len(traces)+len(tracesvac)) + ' files in ', end='')
+        # toc()
+        if report:
+            print(' seconds.')
         self.xval = np.array([tr.values for tr in traces])
         self.xvalvac = np.array([tr.values for tr in tracesvac])
         self.trigtimes = np.array([tr.trigtimes[0] for tr in traces])
