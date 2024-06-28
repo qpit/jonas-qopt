@@ -268,8 +268,10 @@ class Gaussian:
         Project a mode onto vacuum - multiply with vacuum Wigner function
         and trace over that mode.
         """
-        cov_vac = [0.5 if i in modes2indices([mode])[0] else 0
-                   for i in range(2*self.numModes)]
+        cov_vac = np.zeros(2*self.numModes)
+        cov_vac[modes2indices([mode], retgrid=False)] = 0.5
+        # cov_vac = [0.5 if i in modes2indices([mode])[0] else 0
+                   # for i in range(2*self.numModes)]
         e_modes = [m for m in range(self.numModes) if m != mode]
         Gvac = Gaussian(cov_vac, emptymodes=e_modes)
         return pi2 * (self * Gvac).traceMode(mode)
