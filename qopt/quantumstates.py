@@ -11,8 +11,8 @@ import numpy as np
 from numpy import pi, exp, log, sqrt, tan, sin, cos, \
         tanh, sinh, cosh, arccos, angle
 from scipy.special import factorial
-#from scipy import sp.sp.conj, real, imag, real_if_close
-#from scipy import arange, array, sum, sp.outer, mgrid, dot
+#from scipy import sp.np.conj, real, imag, real_if_close
+#from scipy import arange, array, sum, np.outer, mgrid, dot
 from scipy.special import laguerre, genlaguerre
 import scipy.linalg as la
 #from scipy.linalg import det, logm
@@ -57,7 +57,7 @@ def rho_vac(photons=15):
     photons = 15 : photon number cut-off
     """
     cvec = [c_vac(n) for n in range(photons + 1)]
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
     
 def wig_vac():
     """
@@ -86,7 +86,7 @@ def rho_fock(m, photons=15):
     photons = 15 : photon number cut-off
     """
     cvec = [c_fock(m, n) for n in range(photons + 1)]
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
     
 def wig_fock(m):
     """
@@ -114,7 +114,7 @@ def rho_coh(alpha, photons=15):
     photons = 15 : photon number cut-off
     """
     cvec = [c_coh(alpha, n) for n in range(photons + 1)]
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
     
 def wig_coh(alpha):
     """
@@ -147,7 +147,7 @@ def rho_coqu(alpha, theta, phi, photons=15):
     """    
     cvec = c_coqu(alpha, theta, phi, np.arange(photons + 1))
     
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
     
 def cat2coqu(alpha, theta, phi):
     """
@@ -203,7 +203,7 @@ def rho_sqv(r, phi=0, photons=15):
     photons = 15 : photon number cut-off
     """
     cvec = [c_sqv(r, n) for n in range(photons + 1)]
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
     
 def wig_sqv(r):
     """
@@ -236,7 +236,7 @@ def rho_1ps(r, photons=15):
     """
     cvec = [c_1ps(r, n) for n in range(photons + 1)]
     
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
     
 def wig_1ps(r):
     """
@@ -269,7 +269,7 @@ def rho_2ps(r, photons=15):
     """
     cvec = [c_2ps(r, n) for n in range(photons + 1)]
     
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
 
 
 # ==== squeezed m-photon Fock state ====
@@ -318,7 +318,7 @@ def rho_sqq(r, theta, phi, photons=15):
     """
     cvec = [c_sqq(r, theta, phi, n) for n in range(photons + 1)]
     
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
 
 def wig_sqq(r, theta, phi):
     """
@@ -358,7 +358,7 @@ def rho_sq12q(r, theta, phi, photons=15):
     """
     cvec = [c_sq12q(r, theta, phi, n) for n in range(photons + 1)]
     
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
 
 
 
@@ -383,7 +383,7 @@ def rho_cat(alpha, theta, phi, photons=15):
     """    
     cvec = c_cat(alpha, theta, phi, np.arange(photons + 1))
     
-    return sp.outer(cvec, sp.conj(cvec))
+    return np.outer(cvec, np.conj(cvec))
 
 def wig_cat(alpha, theta, phi):
     """
