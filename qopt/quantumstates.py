@@ -7,6 +7,7 @@ Created on Fri Apr 23 13:39:17 2010
 
 
 import scipy as sp
+import numpy as np
 from numpy import pi, exp, log, sqrt, tan, sin, cos, \
         tanh, sinh, cosh, arccos, angle
 from scipy.special import factorial
@@ -144,7 +145,7 @@ def rho_coqu(alpha, theta, phi, photons=15):
     rho_coqu(alpha, theta, phi, n)
     |alpha> for theta=0, |-alpha> for theta=pi.
     """    
-    cvec = c_coqu(alpha, theta, phi, sp.arange(photons + 1))
+    cvec = c_coqu(alpha, theta, phi, np.arange(photons + 1))
     
     return sp.outer(cvec, sp.conj(cvec))
     
@@ -282,7 +283,7 @@ def c_sqFock(r, m, n):
     if (m-n) % 2 == 1:
         c = 0
     else:
-        k = sp.arange(max(m,n)/2)
+        k = np.arange(max(m,n)/2)
         s = (-1)**k
         if n<m:
             m,n = n,m
@@ -380,7 +381,7 @@ def rho_cat(alpha, theta, phi, photons=15):
     rho_cat(alpha, theta, phi, n)
     Even cat for theta=0, odd for theta=pi.
     """    
-    cvec = c_cat(alpha, theta, phi, sp.arange(photons + 1))
+    cvec = c_cat(alpha, theta, phi, np.arange(photons + 1))
     
     return sp.outer(cvec, sp.conj(cvec))
 
@@ -484,7 +485,7 @@ def wig2photonnumber(wig):
     X,P = sp.meshgrid(x,x)
     return (sp.array([(lambda x,p: 
         2*pi * wig(x,p) * wig_fock(m)(x,p))(X,P).sum() * dx**2 
-        for m in range(20)])*sp.arange(20)).sum()
+        for m in range(20)])*np.arange(20)).sum()
         
 # =============================================================================
 #  constants and stuff
