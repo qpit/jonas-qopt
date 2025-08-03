@@ -1,3 +1,5 @@
 qopt
 ----
-Quantum optics tools
+Quantum optics tools. Use at your own risk. Or don't.
+
+(This is ancient code that's only sporadically used by myself, but you might find some useful functions within)
