@@ -19,7 +19,7 @@ from numpy import pi, exp, log, sqrt, angle
 from numpy import asmatrix, asarray, finfo, zeros, mgrid, meshgrid, array, \
                   arange, linspace, real, imag, real_if_close, dot, tensordot, \
                   nonzero, outer, tile, sum, arccos, arctan2, conj, \
-                  mat, isfinite, ogrid, eye
+                  isfinite, ogrid, eye
 from numpy.random import rand
 import scipy.optimize as optimize
 import qopt.quantumstates as qs
@@ -653,13 +653,13 @@ def logmALT(A, disp=True):
         if not isfinite(errest) or errest >= errtol:
             N,N = A.shape
             X,Y = ogrid[1:N+1,1:N+1]
-            R = mat(la.orth(eye(N,dtype='d')+X+Y))
+            R = asmatrix(la.orth(eye(N,dtype='d')+X+Y))
             F, dontcare = la.funm(R*A*R.H,log,disp=0)
             F = R.H*F*R
             if (la.misc.norm(imag(F),1)<=1000*errtol*la.misc.norm(F,1)):
-                F = mat(real(F))
-            E = mat(la.expm(F))
-            temp = mat(la.solve(E.T,(E-A).T))
+                F = asmatrix(real(F))
+            E = asmatrix(la.expm(F))
+            temp = asmatrix(la.solve(E.T,(E-A).T))
             F = F - temp.T
             errest = la.misc.norm(la.expm(F)-A,1) / la.misc.norm(A,1)
     if disp:
